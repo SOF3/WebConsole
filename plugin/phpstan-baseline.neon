@@ -1,0 +1,6 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Strict comparison using \\=\\=\\= between int\\<min, 10\\>\\|int\\<12, max\\> and 11 will always evaluate to false\\.$#"
+			count: 1
+			path: src/http.php

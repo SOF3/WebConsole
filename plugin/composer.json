@@ -1,0 +1,25 @@
+{
+    "name": "sof3/webconsole",
+    "type": "project",
+    "require": {
+        "sof3/await-generator": "^3.4.2",
+        "pocketmine/pocketmine-mp": "^4.0.0"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.2",
+        "phpunit/phpunit": "^9.5",
+        "friendsofphp/php-cs-fixer": "^3.4"
+    },
+    "autoload": {
+        "classmap": [
+            "src"
+        ]
+    },
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "SOFe",
+            "email": "sofe2038@gmail.com"
+        }
+    ]
+}
