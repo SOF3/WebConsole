@@ -1,0 +1,8 @@
+groups:
+  - id: main
+    display_name: main
+    display_priority: 1
+apis:
+  - id: players
+    display_name: players
+    group: main

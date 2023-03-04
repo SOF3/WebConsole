@@ -1,0 +1,16 @@
+[package]
+name = "site"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.69"
+defy = "0.1.2"
+fluent = "0.16.0"
+futures = "0.3.26"
+gloo = { version = "0.8.0", features = ["futures"] }
+indexmap = "1.9.2"
+serde = { version = "1.0.152", features = ["derive", "rc"] }
+web-sys = { version = "0.3.61", features = ["Navigator"] }
+yew = { version = "0.20.0", features = ["csr"] }
+yew-router = "0.17.0"
