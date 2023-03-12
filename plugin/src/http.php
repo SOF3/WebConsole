@@ -15,7 +15,6 @@ use SOFe\AwaitGenerator\Traverser;
 use function count;
 use function explode;
 use function microtime;
-use function random_bytes;
 use function socket_accept;
 use function socket_bind;
 use function socket_close;
@@ -25,6 +24,7 @@ use function socket_last_error;
 use function socket_listen;
 use function socket_read;
 use function socket_set_nonblock;
+use function socket_set_option;
 use function socket_strerror;
 use function socket_write;
 use function strlen;
@@ -60,6 +60,10 @@ final class HttpServer {
 
         $this->socket = $sk;
 
+        if (!socket_set_option($sk, SOL_SOCKET, SO_REUSEADDR, 1)) {
+            throw $this->throw("set socket to REUSEADDR");
+        }
+
         if (!socket_set_nonblock($sk)) {
             throw $this->throw("set socket to non-blocking mode");
         }
@@ -94,7 +98,7 @@ final class HttpServer {
         foreach ($this->clients as $sessionId => $client) {
             try {
                 $client->tick();
-            } catch(HttpException $e) {
+            } catch (HttpException $e) {
                 // DoS protection, do not log the error
                 $client->close();
             }
@@ -186,7 +190,7 @@ final class HttpClient {
 
         $this->write("$response->httpVersion $response->httpCode\r\n");
         foreach ($response->headers->headers as $key => $value) {
-            $this->write("$key $value\r\n");
+            $this->write("$key: $value\r\n");
         }
         $this->write("\r\n");
 
@@ -337,6 +341,8 @@ final class HttpHeaders {
      * @param array<string, string> $headers
      */
     public function __construct(public array $headers = []) {
+        $this->headers["Server"] = "PocketMine-MP WebConsole";
+        $this->headers["Access-Control-Allow-Origin"] = "*";
     }
 
     public function parse(string $line) : bool {
@@ -367,4 +373,5 @@ final class HttpResponse {
     }
 }
 
-final class HttpException extends Exception {}
+final class HttpException extends Exception {
+}

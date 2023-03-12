@@ -15,7 +15,7 @@ use crate::util::{self, Grc, RcStr};
 #[hook]
 pub fn use_client() -> Grc<ApiClient> {
     Grc::new(ApiClient {
-        host: "http://localhost:5050".to_string(), // TODO
+        host: "http://localhost:14875".to_string(), // TODO
     })
 }
 
@@ -38,13 +38,19 @@ impl ApiClient {
         });
         let prefer = match prefer.as_string() {
             Some(prefer) => prefer,
-            None => prefers.get(0).as_string().expect("locales list is empty"),
+            None => {
+                let locale = locales.iter().next().context("server locale list is mepty")?;
+                locale.to_string()
+            }
         };
 
         let resp = http::Request::new(&format!("{}/{prefer}.ftl", &self.host))
             .send()
             .await
             .context("request ftl file")?;
+        if resp.status() != 200 {
+
+        }
         let ftl_str = resp.text().await.context("receive ftl file")?;
         let res = match FluentResource::try_new(ftl_str) {
             Ok(res) => res,

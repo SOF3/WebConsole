@@ -31,7 +31,7 @@ fn AppSuspense() -> HtmlResult {
     })?;
     let (i18n, discovery) = match &*queries {
         Ok(data) => data.clone(),
-        Err(err) => return Ok(html! { <>{ format!("err: {err}") }</> }),
+        Err(err) => return Ok(html! { <pre>{ format!("Error: {err:?}") }</pre> }),
     };
 
     Ok(defy! {

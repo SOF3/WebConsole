@@ -19,7 +19,8 @@ final class MutationDef {
         public array $metadata,
         public array $params,
         public Closure $executor,
-    ) {}
+    ) {
+    }
 }
 
 final class MutationResponse {
@@ -29,5 +30,6 @@ final class MutationResponse {
     public function __construct(
         public array $data,
         public bool $complete = true,
-    ) {}
+    ) {
+    }
 }
