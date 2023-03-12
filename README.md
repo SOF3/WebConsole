@@ -2,89 +2,91 @@
 
 > API server and modernized control panel for PocketMine servers.
 
-The WebConsole plugin provides an HTTP API server
-that can be extended with other plugins through intuitive API
-involving minimal logic related to web development
-so that developers can focus on the actual logic and let WebConsole handle the GUI.
+The WebConsole plugin runs an HTTP server
+that provides an object-oriented declarative REST API
+to interact with server logic.
+It exposes a plugin API focused on business logic
+so that plugins can expose their features through WebConsole
+without involving anh web-specific logic.
 
-The project comes with a static web app that connects to this API server,
-providing visualization of server data and a user-friendly GUI to control the server.
+The project also offers a webapp that connects to this API server
+to visualize server data and control the server without using commands.
 
 ## Objectives
 
 ### Goals
 
-- Provide a basic medium of inter-process communication to control a PocketMine server.
+- Provide a mchine-friendly form of inter-process communication to control a PocketMine server,
+  in contrast to unreliable, fuzzy interfaces like RCON.
 - Provide an extensible API that allows plugins to
   expose their functionality to other processes.
-- Provide a user-friendly GUI to view server data and trigfer actions on the server,
+- Provide a user-friendly GUI to view server data and trigger actions on the server,
   eventually phasing out stdin commands.
 
 ### Non-goals
 
 - WebConsole does not implement any permission management or authentication.
   Hence, it should not be a publicly accessible API.
-  It only serves as an RPC server, but does not come with any permission management.
-  Any access to the WebConsole HTTP server, other than access by the sole super user,
-  must be relayed through a more secure layer that implements authentication.
+  Production deployment should hide the API server behind a secure proxy sidecar.
 - WebConsole is not a server deployment manager.
   It does not control the startup/shutdown lifecycle of a server.
   The WebConsole HTTP server runs inside a PocketMine server, not the other way round.
+  However, hosts that implement a server manager could frame the WebConsole GUI inside theirs.
 - WebConsole is not scalable for network management.
   While it is designed to serve as a building block for centralized network management,
   it is not designed to be connected from every other node in a server network.
   A central network manager can call WebConsole APIs to control an individual server,
-  but WebConsole itself should not be used as the network manager itself.
+  but WebConsole itself should not be used as the network manager.
 
 ## Concepts
 
 ### Objects
 
-Objects are the primary interface for WebConsole.
-Objects are grouped into different *kinds*,
-where the web app would display a list of each object kind.
+An object is something with a defined type and a unique name.
+An object could be live (e.g. worlds, players), temporary (e.g. chat messages),
+lazy (e.g. offline player data) and singleton (e.g. plugin configuration).
 
-Builtin object kinds include:
+API clients can list all objects of a kind,
+or monitor the creation and deletion of such objects.
 
-- Online Player
-- Account (including online and offline players)
-- World
-- Server (only has one object)
-- WebConsole (only has one object)
+### Fields
 
-Other plugins can register new object kinds.
-The plugin that registers the object kind
-is responsible for notifying the creation and deletion of its objects.
+A field contains some data associated with an object.
+Fields are provided separately from objects.
+For example, an economy plugin can provide a field to player objects
+to indicate the amount of money the player owns.
+The field data are included under the object root in list/watch/get responses.
 
-### Details
+The type of data returned by field providers is arbitrary,
+but they must be JSON-serializable that can be described using WebConsole type schema.
+The following types are supported:
 
-Details are data associated to an object.
-Details can be of any scalar or complex type.
-The following types have builtin support for WebConsole web app:
-
-- String (including specialized types like datetime and enums)
-- Number
-- Boolean
-- Time series
+- String
+- Enum
+- Timestamp
+- Integer, Float, Boolean
 - References to other objects
-- Lists/Structs of the types above
+- Optional/List/Compound/Union of the types above
 
-Other plugins can register new object details for existing object kinds.
-Detail provision is async, continuous and active,
-which means other plugins need to notify WebConsole API
-when an object detail is updated.
+Field providers are responsible for pushing updates of fields in listed objects.
 
-### Mutations
+### Object creation
 
-While objects and details provide read access to the server,
-mutations allow clients to actively modify the server.
+Object providers may provide the ability to create objects.
+Fields supplied by the API client during object creation
+are passed to the corresponding field providers to
+prepare/postprocess the created object.
 
-Plugins can register new mutations with explicitly declared parameter types.
-If a parameter type is an object, it gets linked in the object display page.
-For example, a mutation called "ban player" accepts an Account object parameter,
-so a "ban player" button is available from each account display page.
+The semantics of object creation is subject to object provider interpretation.
 
-Mutation responses can be progressive.
-Plugins can return an asynchronous stream of "progress snapshots"
-that are rendered in the client similar to detail views.
-A mutation completes when server returns with a snapshot that flags an end-of-stream.
+### Object deletion
+
+Object providers may provide the ability to delete objects.
+The semantics of object deletion is subject to object provider interpretation.
+
+### Object updates
+
+API clients may update an object by sending the modified fields of an object.
+Fields in update requests are directly processed by the corresponding field providers.
+
+Note that object updates may not necessarily be reflected in watch/get requests.
