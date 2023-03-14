@@ -45,9 +45,9 @@ final class Registry {
         $objectDef->fields[$def->path] = $def;
     }
 
-    public function provideFluent(string $owner, string $locale, string $fluent) : void {
+    public function provideFluent(string $comp, string $locale, string $fluent) : void {
         $this->fluentLocales[$locale] ??= new FluentLocale($locale);
-        $this->fluentLocales[$locale]->provide($owner, $fluent);
+        $this->fluentLocales[$locale]->provide($comp, $fluent);
     }
 }
 
@@ -55,6 +55,7 @@ final class GroupDef {
     public function __construct(
         public string $id,
         public string $displayName,
+        public int $displayPriority,
     ) {
     }
 }

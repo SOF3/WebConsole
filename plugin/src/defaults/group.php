@@ -15,10 +15,8 @@ final class Group {
         $registry->registerGroup(new GroupDef(
             id: self::ID,
             displayName: "main-group",
+            displayPriority: 0,
         ));
-        $registry->provideFluent("main", "en", <<<EOF
-            main-group = Main
-            EOF);
         Players::register($plugin, $registry);
     }
 }

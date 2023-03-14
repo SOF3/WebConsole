@@ -3,3 +3,4 @@ vendor
 target
 node_modules
 dist
+local

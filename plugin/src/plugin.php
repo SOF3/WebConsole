@@ -9,8 +9,13 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
 use PrefixedLogger;
 
+use function count;
+use function explode;
+use function file_get_contents;
 use function is_int;
 use function is_string;
+use function str_ends_with;
+use function substr;
 
 final class Main extends PluginBase {
     protected function onEnable() : void {
@@ -42,6 +47,13 @@ final class Main extends PluginBase {
         $this->getScheduler()->scheduleTask(new ClosureTask(fn() => $server->listen()));
         $this->getScheduler()->scheduleDelayedRepeatingTask(new ClosureTask(fn() => $server->tick()), 1, 1);
 
+        foreach ($this->getResources() as $path => $resource) {
+            $pathParts = explode("/", $path);
+            if (count($pathParts) === 3 && $pathParts[0] === "locales" && str_ends_with($pathParts[2], ".ftl")) {
+                $locale = $pathParts[1];
+                $registry->provideFluent(substr($pathParts[2], 0, -4), $locale, file_get_contents($resource->getPathname()));
+            }
+        }
         Defaults\Group::register($this, $registry);
     }
 

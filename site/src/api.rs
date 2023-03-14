@@ -48,9 +48,7 @@ impl ApiClient {
             .send()
             .await
             .context("request ftl file")?;
-        if resp.status() != 200 {
-
-        }
+        if resp.status() != 200 {}
         let ftl_str = resp.text().await.context("receive ftl file")?;
         let res = match FluentResource::try_new(ftl_str) {
             Ok(res) => res,

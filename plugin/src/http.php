@@ -15,6 +15,7 @@ use SOFe\AwaitGenerator\Traverser;
 use function count;
 use function explode;
 use function microtime;
+use function parse_str;
 use function socket_accept;
 use function socket_bind;
 use function socket_close;
@@ -32,6 +33,7 @@ use function strpos;
 use function strtolower;
 use function strtoupper;
 use function substr;
+use function urldecode;
 
 final class HttpServer {
     private Socket $socket;
@@ -219,7 +221,16 @@ final class HttpClient {
             throw new HttpException("Protocol error: invalid address line");
         }
 
-        return new HttpAddress($method, $path, $httpVersion);
+        $pos = strpos($path, "?");
+        if ($pos !== false) {
+            parse_str(substr($path, $pos + 1), $query);
+            $path = substr($path, 0, $pos);
+        } else {
+            $query = [];
+        }
+        $path = urldecode($path);
+
+        return new HttpAddress($method, $path, $query, $httpVersion);
     }
 
     /**
@@ -326,11 +337,13 @@ final class HttpAddress {
     /**
      * @param string $method always uppercase
      * @param string $path always starts with a slash
+     * @param array<string, string|string[]> $query GET parameters of the request
      * @param string $httpVersion must start with "HTTP/1"
      */
     public function __construct(
         public string $method,
         public string $path,
+        public array $query,
         public string $httpVersion,
     ) {
     }

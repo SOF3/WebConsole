@@ -9,6 +9,7 @@ use pocketmine\event\EventPriority;
 use pocketmine\event\HandlerListManager;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\player\Player;
 use SOFe\AwaitGenerator\Channel;
 use SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\AddObjectEvent;
@@ -30,9 +31,6 @@ final class Players {
             displayName: "main-player-kind",
             desc: new PlayerObjectDesc($plugin),
         ));
-        $registry->provideFluent("main/player", "en", <<<EOF
-            main-player-kind = Online Players
-            EOF);
     }
 }
 
