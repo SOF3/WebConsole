@@ -1,5 +1,7 @@
+use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::future::Future;
+use std::hash::Hash;
 use std::rc::Rc;
 
 use anyhow::Context;
@@ -13,17 +15,17 @@ use crate::i18n::{self, I18n};
 use crate::util::{self, Grc, RcStr};
 
 #[hook]
-pub fn use_client() -> Grc<ApiClient> {
-    Grc::new(ApiClient {
+pub fn use_client() -> Grc<Client> {
+    Grc::new(Client {
         host: "http://localhost:14875".to_string(), // TODO
     })
 }
 
-pub struct ApiClient {
+pub struct Client {
     pub host: String,
 }
 
-impl ApiClient {
+impl Client {
     pub fn locales(self: &Rc<Self>) -> impl Future<Output = anyhow::Result<I18n>> {
         let this = self.clone();
         async move { this.locales_impl().await }
@@ -76,6 +78,29 @@ impl ApiClient {
         Ok(Grc::new(self.request("discovery").await?))
     }
 
+    pub fn list(
+        self: &Rc<Self>,
+        group: String,
+        kind: String,
+    ) -> impl Future<Output = anyhow::Result<Vec<Object>>> {
+        let this = self.clone();
+        async move { this.list_impl(&group, &kind).await }
+    }
+    async fn list_impl(&self, group: &str, kind: &str) -> anyhow::Result<Vec<Object>> {
+        let resp = http::Request::new(&format!("{}/{group}/{kind}", &self.host)).send().await?;
+        let lines = resp.text().await.context("response is not valid UTF-8")?;
+
+        let mut objects = Vec::new();
+        for line in lines.split("\n") {
+            if !line.is_empty() {
+                let object = serde_json::from_str(line).context("deserialize list json")?;
+                objects.push(object);
+            }
+        }
+
+        Ok(objects)
+    }
+
     async fn request<T: DeserializeOwned>(&self, path: &str) -> anyhow::Result<T> {
         Ok(http::Request::new(&format!("{}/{path}", &self.host)).send().await?.json::<T>().await?)
     }
@@ -83,30 +108,76 @@ impl ApiClient {
 
 #[derive(Deserialize, PartialEq, Eq)]
 pub struct Discovery {
-    pub groups: util::IdMap<ApiGroup>,
-    pub apis:   util::IdMap<ApiDesc>,
-}
-
-macro_rules! impl_has_id {
-    ($ty:ty) => {
-        impl util::HasId for $ty {
-            fn id(&self) -> &str { &self.id }
-        }
-    };
+    pub groups: util::IdMap<RcStr, Group>,
+    pub apis:   util::IdMap<GroupKind, Desc>,
 }
 
 #[derive(Deserialize, PartialEq, Eq)]
-pub struct ApiDesc {
-    pub id:           RcStr,
+pub struct Desc {
+    #[serde(flatten)]
+    pub id:           GroupKind,
     pub display_name: i18n::Key,
-    pub group:        RcStr,
 }
-impl_has_id!(ApiDesc);
+impl util::HasId<GroupKind> for Desc {
+    fn id(&self) -> GroupKind { self.id.clone() }
+}
 
 #[derive(Deserialize, PartialEq, Eq)]
-pub struct ApiGroup {
+pub struct Group {
     pub id:               RcStr,
     pub display_name:     i18n::Key,
     pub display_priority: u32,
 }
-impl_has_id!(ApiGroup);
+impl util::HasId<RcStr> for Group {
+    fn id(&self) -> RcStr { self.id.clone() }
+}
+
+#[derive(Deserialize, Clone, PartialEq, Eq, Hash)]
+pub struct GroupKind {
+    pub group: RcStr,
+    pub kind:  RcStr,
+}
+
+#[derive(PartialEq, Eq, Hash)]
+pub struct GroupKindRef<'t> {
+    pub group: &'t str,
+    pub kind:  &'t str,
+}
+
+pub trait GroupKindDyn {
+    fn group(&self) -> &str;
+    fn kind(&self) -> &str;
+}
+impl GroupKindDyn for GroupKind {
+    fn group(&self) -> &str { return &self.group }
+    fn kind(&self) -> &str { return &self.kind }
+}
+impl<'t> GroupKindDyn for GroupKindRef<'t> {
+    fn group(&self) -> &str { return &self.group }
+    fn kind(&self) -> &str { return &self.kind }
+}
+
+impl Hash for dyn GroupKindDyn + '_ {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.group().hash(state);
+        self.kind().hash(state);
+    }
+}
+impl PartialEq for dyn GroupKindDyn + '_ {
+    fn eq(&self, other: &Self) -> bool {
+        return self.group() == other.group() && self.kind() == other.kind();
+    }
+}
+impl Eq for dyn GroupKindDyn + '_ {}
+
+impl<'t> Borrow<dyn GroupKindDyn + 't> for GroupKind {
+    fn borrow(&self) -> &(dyn GroupKindDyn + 't) { self }
+}
+
+#[derive(Deserialize)]
+pub struct Object {
+    #[serde(rename = "_name")]
+    pub name:   String,
+    #[serde(flatten)]
+    pub fields: serde_json::Value,
+}

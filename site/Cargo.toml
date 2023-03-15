@@ -11,6 +11,7 @@ futures = "0.3.26"
 gloo = { version = "0.8.0", features = ["futures"] }
 indexmap = "1.9.2"
 serde = { version = "1.0.152", features = ["derive", "rc"] }
+serde_json = "1.0.94"
 web-sys = { version = "0.3.61", features = ["Navigator"] }
 yew = { version = "0.20.0", features = ["csr"] }
 yew-router = "0.17.0"

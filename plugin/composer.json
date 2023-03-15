@@ -2,8 +2,8 @@
     "name": "sof3/webconsole",
     "type": "project",
     "require": {
-        "sof3/await-generator": "^3.4.2",
-        "pocketmine/pocketmine-mp": "^4.0.0"
+        "sof3/await-generator": "dev-traverser-generics",
+        "pocketmine/pocketmine-mp": "^4.13.0"
     },
     "require-dev": {
         "phpstan/phpstan": "^1.2",

@@ -44,7 +44,7 @@ fn AppSuspense() -> HtmlResult {
                     div(class="section"){
                         Switch<Route>(render = {
                             let discovery = discovery.clone();
-                            move |route| switch(route, i18n.clone(), discovery.clone())
+                            move |route| switch(route, api.clone(), i18n.clone(), discovery.clone())
                         });
                     }
                 }
@@ -61,17 +61,22 @@ fn fallback() -> Html {
 
 #[derive(Routable, Clone, PartialEq)]
 enum Route {
-    #[at("/:id")]
-    List { id: util::RcStr },
+    #[at("/:group/:kind")]
+    List { group: util::RcStr, kind: util::RcStr },
     #[at("/")]
     Home,
 }
 
-fn switch(route: Route, i18n: I18n, discovery: util::Grc<api::Discovery>) -> Html {
+fn switch(
+    route: Route,
+    api: util::Grc<api::Client>,
+    i18n: I18n,
+    discovery: util::Grc<api::Discovery>,
+) -> Html {
     defy! {
         match route {
-            Route::List { id } => {
-                pages::list::Comp(i18n, discovery, id);
+            Route::List { group, kind } => {
+                pages::list::Comp(api, i18n, discovery, group, kind);
             }
             Route::Home => {
                 pages::home::Comp(i18n);

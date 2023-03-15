@@ -1,5 +1,7 @@
+use std::borrow::Borrow;
 use std::collections::{hash_map, HashMap};
 use std::convert::Infallible;
+use std::hash::Hash;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::str::FromStr;
@@ -63,41 +65,51 @@ impl<'de> Deserialize<'de> for RcStr {
 
 /// A map that is serialized as a list, indexed with one of its fields.
 #[derive(PartialEq, Eq)]
-pub struct IdMap<T> {
-    map: HashMap<Rc<str>, T>,
+pub struct IdMap<K: Eq + Hash, V> {
+    map: HashMap<K, V>,
 }
 
-impl<T> IdMap<T> {
-    pub fn values(&self) -> impl Iterator<Item = &T> { self.map.values() }
+impl<K: Eq + Hash, V> IdMap<K, V> {
+    pub fn values(&self) -> impl Iterator<Item = &V> { self.map.values() }
 
-    pub fn get(&self, key: &str) -> Option<&T> { self.map.get(key) }
+    pub fn get<Q: Hash + Eq + ?Sized>(&self, key: &Q) -> Option<&V>
+    where
+        K: Borrow<Q>,
+    {
+        self.map.get(key)
+    }
 }
 
-impl<T> Default for IdMap<T> {
+impl<K: Eq + Hash, V> Default for IdMap<K, V> {
     fn default() -> Self { Self { map: HashMap::new() } }
 }
 
-impl<'t, T> IntoIterator for &'t IdMap<T> {
-    type Item = &'t T;
-    type IntoIter = hash_map::Values<'t, Rc<str>, T>;
+impl<'t, K: Eq + Hash, V> IntoIterator for &'t IdMap<K, V> {
+    type Item = &'t V;
+    type IntoIter = hash_map::Values<'t, K, V>;
 
     fn into_iter(self) -> Self::IntoIter { self.map.values() }
 }
 
-impl<'de, T: HasId + Deserialize<'de>> Deserialize<'de> for IdMap<T> {
+impl<'de, K, V> Deserialize<'de> for IdMap<K, V>
+where
+    K: Eq + Hash,
+    V: HasId<K> + Deserialize<'de>,
+{
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        struct ListVisitor<T> {
-            marker: PhantomData<T>,
+        struct ListVisitor<K, V> {
+            marker: PhantomData<(K, V)>,
         }
 
-        impl<'de, T> Visitor<'de> for ListVisitor<T>
+        impl<'de, K, V> Visitor<'de> for ListVisitor<K, V>
         where
-            T: HasId + Deserialize<'de>,
+            K: Eq + Hash,
+            V: HasId<K> + Deserialize<'de>,
         {
-            type Value = HashMap<Rc<str>, T>;
+            type Value = HashMap<K, V>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a sequence")
@@ -109,8 +121,8 @@ impl<'de, T: HasId + Deserialize<'de>> Deserialize<'de> for IdMap<T> {
             {
                 let mut map = HashMap::new();
 
-                while let Some(value) = seq.next_element::<T>()? {
-                    map.insert(value.id().into(), value);
+                while let Some(value) = seq.next_element::<V>()? {
+                    map.insert(value.id(), value);
                 }
 
                 Ok(map)
@@ -123,6 +135,6 @@ impl<'de, T: HasId + Deserialize<'de>> Deserialize<'de> for IdMap<T> {
     }
 }
 
-pub trait HasId {
-    fn id(&self) -> &str;
+pub trait HasId<Id> {
+    fn id(&self) -> Id;
 }

@@ -7,11 +7,11 @@ namespace SOFe\WebConsole;
 use pocketmine\plugin\DisablePluginException;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
+use pocketmine\utils\Filesystem;
 use PrefixedLogger;
 
 use function count;
 use function explode;
-use function file_get_contents;
 use function is_int;
 use function is_string;
 use function str_ends_with;
@@ -51,7 +51,8 @@ final class Main extends PluginBase {
             $pathParts = explode("/", $path);
             if (count($pathParts) === 3 && $pathParts[0] === "locales" && str_ends_with($pathParts[2], ".ftl")) {
                 $locale = $pathParts[1];
-                $registry->provideFluent(substr($pathParts[2], 0, -4), $locale, file_get_contents($resource->getPathname()));
+                $contents = Filesystem::fileGetContents($resource->getPathname());
+                $registry->provideFluent(substr($pathParts[2], 0, -4), $locale, $contents);
             }
         }
         Defaults\Group::register($this, $registry);

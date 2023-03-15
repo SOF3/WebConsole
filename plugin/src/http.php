@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SOFe\WebConsole;
 
 use Closure;
+use ErrorException;
 use Exception;
 use Generator;
 use Logger;
@@ -14,6 +15,7 @@ use SOFe\AwaitGenerator\Await;
 use SOFe\AwaitGenerator\Traverser;
 use function count;
 use function explode;
+use function is_array;
 use function microtime;
 use function parse_str;
 use function socket_accept;
@@ -100,9 +102,9 @@ final class HttpServer {
         foreach ($this->clients as $sessionId => $client) {
             try {
                 $client->tick();
-            } catch (HttpException $e) {
-                // DoS protection, do not log the error
+            } catch (HttpException|ErrorException $e) {
                 $client->close();
+                $this->logger->logException($e);
             }
 
             if ($client->isClosed()) {
@@ -221,12 +223,21 @@ final class HttpClient {
             throw new HttpException("Protocol error: invalid address line");
         }
 
+        /** @var array<string, list<string>> */
+        $query = [];
         $pos = strpos($path, "?");
         if ($pos !== false) {
-            parse_str(substr($path, $pos + 1), $query);
+            parse_str(substr($path, $pos + 1), $queryTmp);
+            foreach ($queryTmp as &$values) {
+                if (!is_array($values)) {
+                    $values = [$values];
+                }
+            }
+            unset($values);
+            /** @var array<string, list<string>> $queryTmp */
+            $query = $queryTmp;
+
             $path = substr($path, 0, $pos);
-        } else {
-            $query = [];
         }
         $path = urldecode($path);
 
@@ -337,7 +348,7 @@ final class HttpAddress {
     /**
      * @param string $method always uppercase
      * @param string $path always starts with a slash
-     * @param array<string, string|string[]> $query GET parameters of the request
+     * @param array<string, string[]> $query GET parameters of the request
      * @param string $httpVersion must start with "HTTP/1"
      */
     public function __construct(
@@ -346,6 +357,19 @@ final class HttpAddress {
         public array $query,
         public string $httpVersion,
     ) {
+    }
+
+    /**
+     * @template T
+     * @param T $default
+     * @return string|T
+     */
+    public function getQueryOnce(string $key, $default) {
+        if (isset($this->query[$key][0])) {
+            return $this->query[$key][0];
+        }
+
+        return $default;
     }
 }
 
@@ -377,6 +401,9 @@ final class HttpHeaders {
 }
 
 final class HttpResponse {
+    /**
+     * @param Traverser<string> $body
+     */
     public function __construct(
         public string $httpVersion,
         public string $httpCode,

@@ -16,8 +16,9 @@ use function sprintf;
  */
 final class FieldDef {
     /**
-     * @param array<string, string> $metadata
      * @param FieldType<V> $type
+     * @param array<string, string> $metadata
+     * @param FieldDesc<I, V> $desc
      */
     public function __construct(
         public string $objectGroup,
@@ -56,8 +57,14 @@ interface FieldDesc {
  * @template V
  */
 interface FieldType {
+    /**
+     * @return array<string, mixed>
+     */
     public function serializeType() : array;
 
+    /**
+     * @param V $value
+     */
     public function serializeValue($value) : mixed;
 }
 
@@ -155,6 +162,9 @@ final class EnumOption {
     ) {
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function serializeType() : array {
         return [
             "id" => $this->id,
@@ -169,7 +179,7 @@ final class EnumOption {
  */
 final class ObjectRefFieldType implements FieldType {
     /**
-     * @param ObjectDef<I>
+     * @param ObjectDef<I> $theirKind
      */
     public function __construct(
         public ObjectDef $theirKind,
@@ -191,7 +201,7 @@ final class ObjectRefFieldType implements FieldType {
 
 /**
  * @template T
- * @implements FieldType<T[]>
+ * @implements FieldType<?T>
  */
 final class NullableFieldType implements FieldType {
     /**
@@ -288,6 +298,9 @@ final class CompoundSubfield {
     ) {
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function serializeType() : array {
         return [
             "key" => $this->key,

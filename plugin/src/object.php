@@ -28,6 +28,9 @@ final class Registry {
         $this->groups[$def->id] = $def;
     }
 
+    /**
+     * @param ObjectDef<mixed> $def
+     */
     public function registerObject(ObjectDef $def) : void {
         if (isset($this->objectKinds[$def->id()])) {
             throw new RuntimeException("Object kind {$def->id()} was already registered");
@@ -36,6 +39,9 @@ final class Registry {
         $this->objectKinds[$def->id()] = $def;
     }
 
+    /**
+     * @param FieldDef<mixed, mixed> $def
+     */
     public function registerField(FieldDef $def) : void {
         if (!isset($this->objectKinds[$def->objectId()])) {
             throw new RuntimeException("Cannot register field for unknown object kind {$def->objectId()}");
@@ -70,7 +76,7 @@ final class FluentLocale {
     ) {
     }
 
-    public function provide(string $comp, string $fluent) {
+    public function provide(string $comp, string $fluent) : void {
         if (array_key_exists($comp, $this->comps)) {
             throw new RuntimeException("Fluent bundle for \"$comp\" was provided multiple times");
         }
@@ -87,6 +93,9 @@ final class ObjectDef {
     public array $fields = [];
 
 
+    /**
+     * @param ObjectDesc<I> $desc
+     */
     public function __construct(
         public string $group,
         public string $kind,
@@ -134,7 +143,7 @@ interface ObjectDesc {
      *
      * @param bool $withExisting If true, an AddObjectEvent is yielded for each existing item in `list()`
      *                           before yielding new changes.
-     * @return Traverser<AddObjectEvent|RemoveObjectEvent>
+     * @return Traverser<AddObjectEvent<I>|RemoveObjectEvent<I>>
      */
     public function watch(bool $withExisting) : Traverser;
 
@@ -150,12 +159,20 @@ interface ObjectDesc {
  * @template I
  */
 final class AddObjectEvent {
-    /** @param I $item */
+    /**
+     * @param I $item
+     */
     public function __construct(public $item) {
     }
 }
 
+/**
+ * @template I
+ */
 final class RemoveObjectEvent {
-    public function __construct(public string $name) {
+    /**
+     * @param I $item
+     */
+    public function __construct(public $item) {
     }
 }

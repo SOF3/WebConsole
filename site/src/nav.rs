@@ -9,8 +9,8 @@ use crate::{api, util, Route};
 #[function_component]
 pub fn Comp(props: &Props) -> HtmlResult {
     struct GroupApis<'t> {
-        group: &'t api::ApiGroup,
-        apis:  Vec<&'t api::ApiDesc>,
+        group: &'t api::Group,
+        apis:  Vec<&'t api::Desc>,
     }
 
     let mut groups: IndexMap<_, GroupApis> = props
@@ -24,7 +24,7 @@ pub fn Comp(props: &Props) -> HtmlResult {
     });
 
     for api in props.discovery.apis.values() {
-        if let Some(group) = groups.get_mut(&api.group) {
+        if let Some(group) = groups.get_mut(&api.id.group) {
             group.apis.push(api);
         }
     }
@@ -44,7 +44,10 @@ pub fn Comp(props: &Props) -> HtmlResult {
             ul(class = "menu-list") {
                 for api in apis {
                     li {
-                        Link<Route>(to = Route::List{id:api.id.clone()}) {
+                        Link<Route>(to = Route::List{
+                            group: api.id.group.clone(),
+                            kind: api.id.kind.clone(),
+                        }) {
                             + props.i18n.disp(&api.display_name);
                         }
                     }

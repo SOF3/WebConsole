@@ -11,8 +11,6 @@ use function array_map;
 use function count;
 use function explode;
 use function in_array;
-use function is_array;
-use function is_string;
 use function json_encode;
 use function json_last_error_msg;
 use function ltrim;
@@ -69,21 +67,10 @@ final class Handler {
             $isWatch = isset($request->address->query["watch"]);
 
             if ($name === null) {
-                $limit = 50;
-                if (isset($request->address->query["limit"])) {
-                    $limitQuery = $request->address->query["limit"];
-                    if (is_array($limitQuery)) {
-                        $limitQuery = $limitQuery[0];
-                    }
-                    $limit = (int) $limitQuery;
-                }
+                $limit = (int) $request->address->getQueryOnce("limit", 50);
 
-                $fieldFilter = fn(string $id) => true;
-                if (isset($request->address->query["fields"])) {
-                    $fields = $request->address->query["fields"];
-                    if (is_string($fields)) {
-                        $fields = [$fields];
-                    }
+                $fieldFilter = fn(string $_) => true;
+                if (($fields = $request->address->query["fields"] ?? null) !== null) {
                     $fieldFilter = fn(string $id) => in_array($id, $fields, true);
                 }
 
@@ -99,8 +86,19 @@ final class Handler {
                                 ];
 
                                 foreach ($objectDef->fields as $field) {
-                                    if ($fieldFilter($field)) {
-                                        $item[$field->path] = $field->desc->get($field);
+                                    if ($fieldFilter($field->path)) {
+                                        $fieldParts = explode(".", $field->path);
+                                        $fieldValue = $field->type->serializeValue(yield from $field->desc->get($object));
+
+                                        $ptr = &$item;
+                                        foreach ($fieldParts as $fieldPart) {
+                                            if (!isset($array[$fieldPart])) {
+                                                $ptr[$fieldPart] = [];
+                                            }
+                                            $ptr = &$ptr[$fieldPart];
+                                        }
+                                        $ptr = $fieldValue;
+                                        unset($ptr);
                                     }
                                 }
 
@@ -137,7 +135,7 @@ final class Handler {
         }
         foreach ($this->registry->objectKinds as $kind) {
             $output["apis"][] = [
-                "id" => $kind->kind,
+                "kind" => $kind->kind,
                 "display_name" => $kind->displayName,
                 "group" => $kind->group,
                 "fields" => array_map(fn(FieldDef $field) => $field->type->serializeType(), $kind->fields),
@@ -183,7 +181,7 @@ final class Handler {
         }));
     }
 
-    private function jsonEncode($value) : string {
+    private function jsonEncode(mixed $value) : string|false {
         return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 
