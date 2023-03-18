@@ -8,11 +8,14 @@ use Generator;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\EntityRegainHealthEvent;
 use pocketmine\event\player\PlayerLoginEvent;
+use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\player\Player;
 use SOFe\AwaitGenerator\Channel;
+use SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\AddObjectEvent;
+use SOFe\WebConsole\EventBasedFieldDesc;
 use SOFe\WebConsole\FieldDef;
 use SOFe\WebConsole\FieldDesc;
 use SOFe\WebConsole\FloatFieldType;
@@ -37,14 +40,42 @@ final class Players {
             displayName: "main-player-kind",
             desc: new PlayerObjectDesc($plugin),
         ));
+
         $registry->registerField(new FieldDef(
             objectGroup: Group::ID,
             objectKind: self::KIND,
             path: "entity.health",
+            displayName: "main-player-entity-health",
             type: new FloatFieldType,
             metadata: [],
-            desc: new HealthFieldDesc($plugin),
+            desc: new EventBasedFieldDesc(
+                plugin: $plugin,
+                events: [EntityDamageEvent::class, EntityRegainHealthEvent::class],
+                getter: fn($player) => GeneratorUtil::empty($player->getHealth()),
+                testEvent: fn($event, $player) => $event->getEntity() === $player,
+            ),
         ));
+
+        foreach([
+            ["x", fn(Player $player) => (float) $player->getLocation()->getX()],
+            ["y", fn(Player $player) => (float) $player->getLocation()->getY()],
+            ["z", fn(Player $player) => (float) $player->getLocation()->getZ()],
+        ] as [$name, $getter]) {
+        $registry->registerField(new FieldDef(
+            objectGroup: Group::ID,
+            objectKind: self::KIND,
+            path: "entity.location.$name",
+            displayName: "main-player-entity-location-$name",
+            type: new FloatFieldType,
+            metadata: [],
+            desc: new EventBasedFieldDesc(
+                plugin: $plugin,
+                events: [PlayerMoveEvent::class],
+                getter: fn($player) => GeneratorUtil::empty($getter($player)),
+                testEvent: fn($event, $player) => $event->getPlayer() === $player,
+            ),
+        ));
+        }
     }
 }
 
@@ -93,38 +124,5 @@ final class PlayerObjectDesc implements ObjectDesc {
     public function get(string $name) : Generator {
         false && yield;
         return $this->plugin->getServer()->getPlayerExact($name);
-    }
-}
-
-/**
- * @implements FieldDesc<Player, float>
- */
-final class HealthFieldDesc implements FieldDesc {
-    public function __construct(private Main $plugin) {
-    }
-
-    public function get($player) : Generator {
-        false && yield;
-        return $player->getHealth();
-    }
-
-    public function watch($player) : Traverser {
-        return Traverser::fromClosure(function() use ($player) {
-            $previous = $player->getHealth();
-            yield $previous => Traverser::VALUE;
-
-            yield from Util::withListener($this->plugin, [EntityDamageEvent::class, EntityRegainHealthEvent::class], function(Channel $channel) use ($player, &$previous) {
-                while (true) {
-                    $event = yield from $channel->receive();
-                    if ($event->getEntity() === $player) {
-                        $health = $player->getHealth();
-                        if ($health !== $previous) {
-                            $previous = $health;
-                            yield $health => Traverser::VALUE;
-                        }
-                    }
-                }
-            });
-        });
     }
 }

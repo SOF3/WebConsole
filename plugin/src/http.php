@@ -100,6 +100,10 @@ final class HttpServer {
         }
 
         foreach ($this->clients as $sessionId => $client) {
+            if ($client->isClosed()) {
+                unset($this->clients[$sessionId]);
+            }
+
             try {
                 $client->tick();
             } catch (HttpException|ErrorException $e) {
@@ -144,7 +148,7 @@ final class HttpClient {
                         return ["", true];
                     }
 
-                    throw $this->throw("socket read");
+                    throw $this->throw("read socket");
                 }
 
                 $lastData = microtime(true);
@@ -152,7 +156,14 @@ final class HttpClient {
             });
         }, $maxRequestSize);
 
-        Await::g2c($this->run($handler));
+        Await::f2c(function() use ($handler) {
+            try {
+                yield from $this->run($handler);
+            } catch(HttpException|ErrorException $e) {
+                $this->close();
+                $this->logger->logException($e);
+            }
+        });
     }
 
     /**
@@ -207,7 +218,7 @@ final class HttpClient {
 
     private function write(string $buffer) : void {
         if (socket_write($this->socket, $buffer) === false) {
-            throw $this->throw("writing response");
+            throw $this->throw("write response");
         }
     }
 
@@ -378,6 +389,7 @@ final class HttpHeaders {
      * @param array<string, string> $headers
      */
     public function __construct(public array $headers = []) {
+        $this->headers["Connection"] = "close";
         $this->headers["Server"] = "PocketMine-MP WebConsole";
         $this->headers["Access-Control-Allow-Origin"] = "*";
     }

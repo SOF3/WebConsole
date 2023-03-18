@@ -1,12 +1,13 @@
 use std::borrow::Borrow;
-use std::collections::{hash_map, HashMap};
+use std::collections::{btree_map, BTreeMap};
 use std::convert::Infallible;
-use std::hash::Hash;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::{fmt, ops};
 
+use futures::{Stream, StreamExt};
+use pin_project::pin_project;
 use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use yew::html::IntoPropValue;
@@ -64,15 +65,15 @@ impl<'de> Deserialize<'de> for RcStr {
 }
 
 /// A map that is serialized as a list, indexed with one of its fields.
-#[derive(PartialEq, Eq)]
-pub struct IdMap<K: Eq + Hash, V> {
-    map: HashMap<K, V>,
+#[derive(Clone, PartialEq, Eq)]
+pub struct IdMap<K: Eq + Ord, V> {
+    map: BTreeMap<K, V>,
 }
 
-impl<K: Eq + Hash, V> IdMap<K, V> {
+impl<K: Eq + Ord, V> IdMap<K, V> {
     pub fn values(&self) -> impl Iterator<Item = &V> { self.map.values() }
 
-    pub fn get<Q: Hash + Eq + ?Sized>(&self, key: &Q) -> Option<&V>
+    pub fn get<Q: Eq + Ord + ?Sized>(&self, key: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
     {
@@ -80,20 +81,20 @@ impl<K: Eq + Hash, V> IdMap<K, V> {
     }
 }
 
-impl<K: Eq + Hash, V> Default for IdMap<K, V> {
-    fn default() -> Self { Self { map: HashMap::new() } }
+impl<K: Eq + Ord, V> Default for IdMap<K, V> {
+    fn default() -> Self { Self { map: BTreeMap::new() } }
 }
 
-impl<'t, K: Eq + Hash, V> IntoIterator for &'t IdMap<K, V> {
+impl<'t, K: Eq + Ord, V> IntoIterator for &'t IdMap<K, V> {
     type Item = &'t V;
-    type IntoIter = hash_map::Values<'t, K, V>;
+    type IntoIter = btree_map::Values<'t, K, V>;
 
     fn into_iter(self) -> Self::IntoIter { self.map.values() }
 }
 
 impl<'de, K, V> Deserialize<'de> for IdMap<K, V>
 where
-    K: Eq + Hash,
+    K: Eq + Ord,
     V: HasId<K> + Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -106,10 +107,10 @@ where
 
         impl<'de, K, V> Visitor<'de> for ListVisitor<K, V>
         where
-            K: Eq + Hash,
+            K: Eq + Ord,
             V: HasId<K> + Deserialize<'de>,
         {
-            type Value = HashMap<K, V>;
+            type Value = BTreeMap<K, V>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a sequence")
@@ -119,7 +120,7 @@ where
             where
                 A: SeqAccess<'de>,
             {
-                let mut map = HashMap::new();
+                let mut map = BTreeMap::new();
 
                 while let Some(value) = seq.next_element::<V>()? {
                     map.insert(value.id(), value);
@@ -137,4 +138,22 @@ where
 
 pub trait HasId<Id> {
     fn id(&self) -> Id;
+}
+
+#[pin_project]
+pub struct StreamWith<S, T> {
+    #[pin]
+    pub stream: S,
+    pub attach: T,
+}
+
+impl<S: Stream + Unpin, T> Stream for StreamWith<S, T> {
+    type Item = S::Item;
+
+    fn poll_next(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        self.project().stream.poll_next_unpin(cx)
+    }
 }

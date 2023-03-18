@@ -11,7 +11,7 @@ pub fn Comp(props: &Props) -> Html {
 
     defy! {
         h1(class = "title") {
-            + props.i18n.disp("home");
+            + props.i18n.disp("base-home");
         }
     }
 }

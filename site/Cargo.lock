@@ -59,9 +59,9 @@ dependencies = [
 
 [[package]]
 name = "defy"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66bc49ff247c6ffdbb514be3f1d96fc4436ab3c7677872a6d9ab181d914df467"
+checksum = "9828d072bc1272b09b961ea34d3f00af454efb33c058437a0381f1d60eaf3559"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -701,13 +701,19 @@ name = "site"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "console_error_panic_hook",
  "defy",
  "fluent",
  "futures",
  "gloo",
  "indexmap",
+ "log",
+ "pin-project",
  "serde",
  "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
  "web-sys",
  "yew",
  "yew-router",
@@ -926,6 +932,17 @@ name = "wasm-bindgen-shared"
 version = "0.2.84"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0046fef7e28c3804e5e38bfa31ea2a0f73905319b677e57ebe37e49358989b5d"
+
+[[package]]
+name = "wasm-logger"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "074649a66bb306c8f2068c9016395fa65d8e08d2affcbf95acf3c24c3ab19718"
+dependencies = [
+ "log",
+ "wasm-bindgen",
+ "web-sys",
+]
 
 [[package]]
 name = "web-sys"

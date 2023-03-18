@@ -5,6 +5,7 @@ use yew::suspense::{use_future, UseFutureHandle};
 use yew_router::prelude::*;
 
 mod api;
+mod comps;
 mod i18n;
 mod nav;
 mod pages;

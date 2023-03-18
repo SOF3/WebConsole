@@ -1,18 +1,21 @@
 use std::borrow::Borrow;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::future::Future;
 use std::hash::Hash;
 use std::rc::Rc;
+use std::cmp;
 
 use anyhow::Context;
 use fluent::{FluentBundle, FluentResource};
+use futures::{Stream, StreamExt};
+use gloo::net::eventsource::futures::EventSource;
 use gloo::net::http;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use yew::hook;
 
 use crate::i18n::{self, I18n};
-use crate::util::{self, Grc, RcStr};
+use crate::util::{self, Grc, RcStr, StreamWith};
 
 #[hook]
 pub fn use_client() -> Grc<Client> {
@@ -87,7 +90,10 @@ impl Client {
         async move { this.list_impl(&group, &kind).await }
     }
     async fn list_impl(&self, group: &str, kind: &str) -> anyhow::Result<Vec<Object>> {
-        let resp = http::Request::new(&format!("{}/{group}/{kind}", &self.host)).send().await?;
+        let resp = http::Request::new(&format!("{}/{group}/{kind}", &self.host))
+            .send()
+            .await
+            .context("sending list request")?;
         let lines = resp.text().await.context("response is not valid UTF-8")?;
 
         let mut objects = Vec::new();
@@ -101,6 +107,39 @@ impl Client {
         Ok(objects)
     }
 
+    pub fn watch(
+        self: &Rc<Self>,
+        group: String,
+        kind: String,
+    ) -> impl Future<Output = anyhow::Result<impl Stream<Item = anyhow::Result<ObjectEvent>>>> {
+        let this = self.clone();
+        async move { this.watch_impl(&group, &kind).await }
+    }
+    async fn watch_impl(
+        &self,
+        group: &str,
+        kind: &str,
+    ) -> anyhow::Result<impl Stream<Item = anyhow::Result<ObjectEvent>>> {
+        let mut es = EventSource::new(&format!(
+            "{}/{group}/{kind}?watch=true&withExisting=true",
+            &self.host
+        ))
+        .context("instantiate EventSource to watch events")?;
+        let sub = es.subscribe("message").context("subscribe to message events")?;
+
+        let mapped = sub.map(|event| {
+            let (_, event) =
+                event.map_err(|err| anyhow::anyhow!("{err}")).context("read event error")?;
+            let de = serde_json::from_str(
+                &event.data().as_string().context("event data should be string")?,
+            )
+            .context("deserialize event json")?;
+            Ok(de)
+        });
+
+        Ok(StreamWith { stream: mapped, attach: es })
+    }
+
     async fn request<T: DeserializeOwned>(&self, path: &str) -> anyhow::Result<T> {
         Ok(http::Request::new(&format!("{}/{path}", &self.host)).send().await?.json::<T>().await?)
     }
@@ -112,17 +151,35 @@ pub struct Discovery {
     pub apis:   util::IdMap<GroupKind, Desc>,
 }
 
-#[derive(Deserialize, PartialEq, Eq)]
+#[derive(Deserialize, Clone, PartialEq, Eq)]
 pub struct Desc {
     #[serde(flatten)]
     pub id:           GroupKind,
     pub display_name: i18n::Key,
+    pub fields:       util::IdMap<RcStr, FieldDef>,
 }
 impl util::HasId<GroupKind> for Desc {
     fn id(&self) -> GroupKind { self.id.clone() }
 }
 
-#[derive(Deserialize, PartialEq, Eq)]
+#[derive(Deserialize, Clone, PartialEq, Eq)]
+pub struct FieldDef {
+    pub path:         RcStr,
+    pub display_name: i18n::Key,
+    #[serde(rename = "type")]
+    pub ty:           FieldType,
+}
+impl util::HasId<RcStr> for FieldDef {
+    fn id(&self) -> RcStr { self.path.clone() }
+}
+
+#[derive(Deserialize, Clone, PartialEq, Eq)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum FieldType {
+    Float64 {},
+}
+
+#[derive(Deserialize, Clone, PartialEq, Eq)]
 pub struct Group {
     pub id:               RcStr,
     pub display_name:     i18n::Key,
@@ -132,13 +189,13 @@ impl util::HasId<RcStr> for Group {
     fn id(&self) -> RcStr { self.id.clone() }
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq, Hash)]
+#[derive(Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct GroupKind {
     pub group: RcStr,
     pub kind:  RcStr,
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct GroupKindRef<'t> {
     pub group: &'t str,
     pub kind:  &'t str,
@@ -165,19 +222,36 @@ impl Hash for dyn GroupKindDyn + '_ {
 }
 impl PartialEq for dyn GroupKindDyn + '_ {
     fn eq(&self, other: &Self) -> bool {
-        return self.group() == other.group() && self.kind() == other.kind();
+        self.group() == other.group() && self.kind() == other.kind()
     }
 }
 impl Eq for dyn GroupKindDyn + '_ {}
+impl PartialOrd for dyn GroupKindDyn + '_ {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Ord for dyn GroupKindDyn + '_ {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        self.group().cmp(other.group()).then_with(|| self.kind().cmp(other.kind()))
+    }
+}
 
 impl<'t> Borrow<dyn GroupKindDyn + 't> for GroupKind {
     fn borrow(&self) -> &(dyn GroupKindDyn + 't) { self }
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Object {
     #[serde(rename = "_name")]
     pub name:   String,
     #[serde(flatten)]
     pub fields: serde_json::Value,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "event")]
+pub enum ObjectEvent {
+    Added { object: Object },
+    Removed { name: String },
 }

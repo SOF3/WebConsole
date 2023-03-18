@@ -33,7 +33,7 @@ pub fn Comp(props: &Props) -> HtmlResult {
         ul(class = "menu-list") {
             li {
                 Link<Route>(to = Route::Home) {
-                    + props.i18n.disp("home");
+                    + props.i18n.disp("base-home");
                 }
             }
         }

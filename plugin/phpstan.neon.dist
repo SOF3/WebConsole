@@ -7,6 +7,11 @@ parameters:
       message: "#^Left side of && is always false\\.$#"
       paths:
         - src/*
+    - # Infinite loops terminated by Traverser->interrupt() is idiomatic in await-generator.
+      message: "#^While loop condition is always true\\.$#"
+      paths:
+        - src/*
+
 
 
 includes:

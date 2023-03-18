@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace SOFe\WebConsole;
 
+use Closure;
 use Generator;
+use SOFe\AwaitGenerator\Await;
 use SOFe\AwaitGenerator\Traverser;
 use function array_keys;
-use function array_map;
 use function count;
 use function explode;
 use function in_array;
@@ -65,53 +66,38 @@ final class Handler {
 
         if ($request->address->method === "GET") {
             $isWatch = isset($request->address->query["watch"]);
+            $withExisting = isset($request->address->query["withExisting"]);
 
             if ($name === null) {
-                $limit = (int) $request->address->getQueryOnce("limit", 50);
-
-                $fieldFilter = fn(string $_) => true;
+                /** @var Closure(string): bool $fieldFilter */
+                $fieldFilter = fn() => true;
                 if (($fields = $request->address->query["fields"] ?? null) !== null) {
                     $fieldFilter = fn(string $id) => in_array($id, $fields, true);
                 }
 
                 if ($isWatch) {
-                    // TODO
+                    return new HttpResponse(
+                        "HTTP/1.0",
+                        "200 OK",
+                        new HttpHeaders([
+                            "Cache-Control" => "no-cache",
+                            "Content-Type" => "text/event-stream; charset=utf-8",
+                        ]),
+                        Traverser::fromClosure(function() use ($objectDef, $fieldFilter, $withExisting) {
+                            yield from $this->watch($objectDef, $fieldFilter, $withExisting);
+                        }),
+                    );
                 } else {
-                    return new HttpResponse("HTTP/1.0", "200 OK", new HttpHeaders, Traverser::fromClosure(function() use ($objectDef, $limit, $fieldFilter) {
-                        $list = $objectDef->desc->list();
-                        try {
-                            while ($limit-- > 0 && yield from $list->next($object)) {
-                                $item = [
-                                    "_name" => $objectDef->desc->name($object),
-                                ];
-
-                                foreach ($objectDef->fields as $field) {
-                                    if ($fieldFilter($field->path)) {
-                                        $fieldParts = explode(".", $field->path);
-                                        $fieldValue = $field->type->serializeValue(yield from $field->desc->get($object));
-
-                                        $ptr = &$item;
-                                        foreach ($fieldParts as $fieldPart) {
-                                            if (!isset($array[$fieldPart])) {
-                                                $ptr[$fieldPart] = [];
-                                            }
-                                            $ptr = &$ptr[$fieldPart];
-                                        }
-                                        $ptr = $fieldValue;
-                                        unset($ptr);
-                                    }
-                                }
-
-                                yield $this->jsonEncode($item) => Traverser::VALUE;
-                                yield "\n" => Traverser::VALUE;
-                            }
-                        } finally {
-                            $e = yield from $list->interrupt();
-                            if ($e !== null) {
-                                throw $e;
-                            }
-                        }
-                    }));
+                    return new HttpResponse(
+                        "HTTP/1.0",
+                        "200 OK",
+                        new HttpHeaders([
+                            "Cache-Control" => "no-cache",
+                        ]),
+                        Traverser::fromClosure(function() use ($objectDef, $fieldFilter) {
+                            yield from $this->list($objectDef, $fieldFilter);
+                        }),
+                    );
                 }
             }
         }
@@ -119,6 +105,103 @@ final class Handler {
         return new HttpResponse("HTTP/1.0", "405 Method Not Allowed", new HttpHeaders, Traverser::fromClosure(function() {
             yield "405 Method Not Allowed" => Traverser::VALUE;
         }));
+    }
+
+    /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
+     * @param Closure(string): bool $fieldFilter
+     * @return Generator<mixed, mixed, mixed, void>
+     */
+    private function watch(ObjectDef $objectDef, Closure $fieldFilter, bool $withExisting) : Generator {
+        $list = $objectDef->desc->watch($withExisting);
+
+        try {
+            while (yield from $list->next($event)) {
+                yield "data: " => Traverser::VALUE;
+                if ($event instanceof AddObjectEvent) {
+                    $item = yield from $this->populateObjectFields($objectDef, $event->item, $fieldFilter);
+                    yield $this->jsonEncode([
+                        "event" => "Added",
+                        "object" => $item,
+                    ]) => Traverser::VALUE;
+                } else {
+                    yield $this->jsonEncode([
+                        "event" => "Removed",
+                        "name" => $objectDef->desc->name($event->item),
+                    ]) => Traverser::VALUE;
+                }
+
+                yield "\n\n" => Traverser::VALUE;
+            }
+        } finally {
+            $e = yield from $list->interrupt();
+            if ($e !== null) {
+                throw $e;
+            }
+        }
+    }
+
+    /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
+     * @param Closure(string): bool $fieldFilter
+     * @return Generator<mixed, mixed, mixed, void>
+     */
+    private function list(ObjectDef $objectDef, Closure $fieldFilter) {
+        $list = $objectDef->desc->list();
+
+        try {
+            while (yield from $list->next($object)) {
+                $item = yield from $this->populateObjectFields($objectDef, $object, $fieldFilter);
+
+                yield $this->jsonEncode($item) => Traverser::VALUE;
+                yield "\n" => Traverser::VALUE;
+            }
+        } finally {
+            $e = yield from $list->interrupt();
+            if ($e !== null) {
+                throw $e;
+            }
+        }
+    }
+
+    /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
+     * @param I $object
+     * @return Generator<mixed, mixed, mixed, array<string, mixed>>
+     */
+    private function populateObjectFields(ObjectDef $objectDef, $object, Closure $fieldFilter) : Generator {
+        $item = [
+            "_name" => $objectDef->desc->name($object),
+        ];
+
+        $futures = [];
+        foreach ($objectDef->fields as $field) {
+            if ($fieldFilter($field->path)) {
+                $futures[] = (function() use ($field, &$item, $object) {
+                    $fieldParts = explode(".", $field->path);
+                    $rawValue = yield from $field->desc->get($object);
+                    $fieldValue = $field->type->serializeValue($rawValue);
+
+                    /** @var array<string, mixed> $ptr */
+                    $ptr = &$item;
+                    foreach ($fieldParts as $fieldPart) {
+                        if (!isset($ptr[$fieldPart])) {
+                            $ptr[$fieldPart] = [];
+                        }
+                        $ptr = &$ptr[$fieldPart];
+                    }
+                    $ptr = $fieldValue;
+                    unset($ptr);
+                })();
+            }
+        }
+
+        yield from Await::all($futures);
+
+        return $item;
     }
 
     private function discovery() : HttpResponse {
@@ -134,11 +217,21 @@ final class Handler {
             ];
         }
         foreach ($this->registry->objectKinds as $kind) {
+            $fields = [];
+            foreach ($kind->fields as $field) {
+                $fields[] = [
+                    "path" => $field->path,
+                    "display_name" => $field->displayName,
+                    "metadata" => $field->metadata,
+                    "type" => $field->type->serializeType(),
+                ];
+            }
+
             $output["apis"][] = [
                 "kind" => $kind->kind,
                 "display_name" => $kind->displayName,
                 "group" => $kind->group,
-                "fields" => array_map(fn(FieldDef $field) => $field->type->serializeType(), $kind->fields),
+                "fields" => $fields,
             ];
         }
 
