@@ -183,7 +183,13 @@ impl Component for List {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let hidden = &ctx.props().hidden;
-        let fields: Vec<_> = ctx.props().def.fields.values().filter(|&field| !hidden.contains(&field.path)).collect();
+        let fields: Vec<_> = ctx
+            .props()
+            .def
+            .fields
+            .values()
+            .filter(|&field| !hidden.contains(&field.path))
+            .collect();
         let i18n = &ctx.props().i18n;
 
         defy! {
@@ -244,10 +250,10 @@ enum ListMsg {
 
 #[derive(Clone, PartialEq, Properties)]
 struct ListProps {
-    api:       util::Grc<api::Client>,
-    i18n:      I18n,
-    group:     AttrValue,
-    kind:      AttrValue,
+    api:    util::Grc<api::Client>,
+    i18n:   I18n,
+    group:  AttrValue,
+    kind:   AttrValue,
     def:    api::Desc,
     hidden: HashSet<util::RcStr>,
 }

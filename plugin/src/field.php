@@ -6,9 +6,9 @@ namespace SOFe\WebConsole;
 
 use Closure;
 use Generator;
-use SOFe\AwaitGenerator\Channel;
 use pocketmine\event\Event;
 use pocketmine\plugin\Plugin;
+use SOFe\AwaitGenerator\Channel;
 use SOFe\AwaitGenerator\Traverser;
 use function array_map;
 use function sprintf;
@@ -74,14 +74,15 @@ final class EventBasedFieldDesc implements FieldDesc {
         private array $events,
         private Closure $getter,
         private Closure $testEvent,
-    ) {}
+    ) {
+    }
 
     public function get($object) : Generator {
         return ($this->getter)($object);
     }
 
     public function watch($object) : Traverser {
-        return Traverser::fromClosure(function() use($object) {
+        return Traverser::fromClosure(function() use ($object) {
             $previous = yield from ($this->getter)($object);
             yield $previous => Traverser::VALUE;
 

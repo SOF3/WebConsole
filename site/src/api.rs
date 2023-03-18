@@ -1,9 +1,9 @@
 use std::borrow::Borrow;
+use std::cmp;
 use std::collections::{BTreeMap, HashSet};
 use std::future::Future;
 use std::hash::Hash;
 use std::rc::Rc;
-use std::cmp;
 
 use anyhow::Context;
 use fluent::{FluentBundle, FluentResource};
@@ -227,9 +227,7 @@ impl PartialEq for dyn GroupKindDyn + '_ {
 }
 impl Eq for dyn GroupKindDyn + '_ {}
 impl PartialOrd for dyn GroupKindDyn + '_ {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        Some(self.cmp(other))
-    }
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> { Some(self.cmp(other)) }
 }
 impl Ord for dyn GroupKindDyn + '_ {
     fn cmp(&self, other: &Self) -> cmp::Ordering {

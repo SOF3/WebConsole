@@ -17,7 +17,6 @@ use SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\AddObjectEvent;
 use SOFe\WebConsole\EventBasedFieldDesc;
 use SOFe\WebConsole\FieldDef;
-use SOFe\WebConsole\FieldDesc;
 use SOFe\WebConsole\FloatFieldType;
 use SOFe\WebConsole\Main;
 use SOFe\WebConsole\ObjectDef;
@@ -56,25 +55,25 @@ final class Players {
             ),
         ));
 
-        foreach([
+        foreach ([
             ["x", fn(Player $player) => (float) $player->getLocation()->getX()],
             ["y", fn(Player $player) => (float) $player->getLocation()->getY()],
             ["z", fn(Player $player) => (float) $player->getLocation()->getZ()],
         ] as [$name, $getter]) {
-        $registry->registerField(new FieldDef(
-            objectGroup: Group::ID,
-            objectKind: self::KIND,
-            path: "entity.location.$name",
-            displayName: "main-player-entity-location-$name",
-            type: new FloatFieldType,
-            metadata: [],
-            desc: new EventBasedFieldDesc(
-                plugin: $plugin,
-                events: [PlayerMoveEvent::class],
-                getter: fn($player) => GeneratorUtil::empty($getter($player)),
-                testEvent: fn($event, $player) => $event->getPlayer() === $player,
-            ),
-        ));
+            $registry->registerField(new FieldDef(
+                objectGroup: Group::ID,
+                objectKind: self::KIND,
+                path: "entity.location.$name",
+                displayName: "main-player-entity-location-$name",
+                type: new FloatFieldType,
+                metadata: [],
+                desc: new EventBasedFieldDesc(
+                    plugin: $plugin,
+                    events: [PlayerMoveEvent::class],
+                    getter: fn($player) => GeneratorUtil::empty($getter($player)),
+                    testEvent: fn($event, $player) => $event->getPlayer() === $player,
+                ),
+            ));
         }
     }
 }

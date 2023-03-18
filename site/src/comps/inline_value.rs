@@ -1,7 +1,8 @@
 use defy::defy;
 use yew::prelude::*;
 
-use crate::{i18n::I18n, api};
+use crate::api;
+use crate::i18n::I18n;
 
 #[function_component]
 pub fn InlineDisplay(props: &Props) -> Html {
@@ -23,7 +24,7 @@ pub fn InlineDisplay(props: &Props) -> Html {
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
-    pub i18n: I18n,
+    pub i18n:  I18n,
     pub value: serde_json::Value,
-    pub ty: api::FieldType,
+    pub ty:    api::FieldType,
 }
