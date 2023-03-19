@@ -1,6 +1,6 @@
 use std::borrow::Borrow;
 use std::cmp;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::HashSet;
 use std::future::Future;
 use std::hash::Hash;
 use std::rc::Rc;
@@ -176,7 +176,48 @@ impl util::HasId<RcStr> for FieldDef {
 #[derive(Deserialize, Clone, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum FieldType {
+    String {},
+    Int64 {},
     Float64 {},
+    Bool {},
+    Enum {
+        options: util::IdMap<RcStr, EnumOption>,
+    },
+    Object {
+        #[serde(flatten)]
+        gk: GroupKind,
+    },
+    Nullable {
+        item: Box<FieldType>,
+    },
+    List {
+        item: Box<FieldType>,
+    },
+    Compound {
+        fields: util::IdMap<RcStr, CompoundSubfield>,
+    },
+}
+
+#[derive(Deserialize, Clone, PartialEq, Eq)]
+pub struct CompoundSubfield {
+    key:  RcStr,
+    name: i18n::Key,
+    #[serde(rename = "type")]
+    ty:   FieldType,
+}
+
+impl util::HasId<RcStr> for CompoundSubfield {
+    fn id(&self) -> RcStr { self.key.clone() }
+}
+
+#[derive(Deserialize, Clone, PartialEq, Eq)]
+pub struct EnumOption {
+    pub id:   RcStr,
+    pub i18n: i18n::Key,
+}
+
+impl util::HasId<RcStr> for EnumOption {
+    fn id(&self) -> RcStr { self.id.clone() }
 }
 
 #[derive(Deserialize, Clone, PartialEq, Eq)]

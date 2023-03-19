@@ -38,10 +38,10 @@ fn AppSuspense() -> HtmlResult {
     Ok(defy! {
         section(class="main-content columns is-fullheight") {
             BrowserRouter {
-                aside(class = "column is-2 is-fullheight section menu"){
+                aside(class = "column is-narrow is-fullheight section menu"){
                     nav::Comp(i18n = i18n.clone(), discovery = discovery.clone());
                 }
-                div(class="container column is-10"){
+                div(class="container column"){
                     div(class="section"){
                         Switch<Route>(render = {
                             let discovery = discovery.clone();

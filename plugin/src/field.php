@@ -316,9 +316,14 @@ final class CompoundFieldType implements FieldType {
     }
 
     public function serializeType() : array {
+        $subfields = [];
+        foreach ($this->subfields as $subfield) {
+            $subfields[] = $subfield->serializeType();
+        }
+
         return [
             "type" => "compound",
-            "fields" => array_map(fn(CompoundSubfield $sub) => $sub->serializeType(), $this->subfields),
+            "fields" => $subfields,
         ];
     }
 

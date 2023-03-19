@@ -51,6 +51,10 @@ impl From<Rc<str>> for RcStr {
     fn from(value: Rc<str>) -> Self { Self(value) }
 }
 
+impl Borrow<str> for RcStr {
+    fn borrow(&self) -> &str { &self.0 }
+}
+
 impl IntoPropValue<AttrValue> for RcStr {
     fn into_prop_value(self) -> AttrValue { AttrValue::Rc(self.0) }
 }

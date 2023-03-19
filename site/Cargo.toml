@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.69"
 console_error_panic_hook = "0.1.7"
-defy = { version = "0.1.3" }
+defy = { version = "0.1.4" }
 fluent = "0.16.0"
 futures = "0.3.26"
 gloo = { version = "0.8.0", features = ["futures"] }
