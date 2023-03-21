@@ -10,6 +10,7 @@ use fluent::{FluentBundle, FluentResource};
 use futures::{Stream, StreamExt};
 use gloo::net::eventsource::futures::EventSource;
 use gloo::net::http;
+use gloo::storage::Storage as _;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use yew::hook;
@@ -17,15 +18,38 @@ use yew::hook;
 use crate::i18n::{self, I18n};
 use crate::util::{self, Grc, RcStr, StreamWith};
 
+#[derive(Deserialize)]
+struct UrlQuery {
+    server: RcStr,
+}
+
+pub const LOCAL_STORAGE_KEY: &str = "webconsole:apiserver-addr";
+
 #[hook]
-pub fn use_client() -> Grc<Client> {
-    Grc::new(Client {
-        host: "http://localhost:14875".to_string(), // TODO
-    })
+pub fn use_client(user_host: Option<RcStr>) -> Grc<Client> {
+    let host = (||{
+            if let Some(host) = user_host {
+                return host;
+            }
+
+            if let Ok(search) = gloo::utils::window().location().search() {
+                if let Ok(query) = serde_qs::from_str::<UrlQuery>(&search) {
+                    return query.server;
+                }
+            }
+
+            if let Ok(storage) = gloo::storage::LocalStorage::get::<RcStr>(LOCAL_STORAGE_KEY) {
+                return storage;
+            }
+
+            RcStr::new("http://localhost:14875")
+        })();
+
+    Grc::new(Client { host })
 }
 
 pub struct Client {
-    pub host: String,
+    pub host: RcStr,
 }
 
 impl Client {

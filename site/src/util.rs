@@ -32,6 +32,12 @@ impl<T> ops::Deref for Grc<T> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RcStr(pub Rc<str>);
 
+impl RcStr {
+    pub fn new(s: impl Into<Rc<str>>) -> Self {
+        Self(s.into())
+    }
+}
+
 impl FromStr for RcStr {
     type Err = Infallible;
     fn from_str(s: &str) -> Result<Self, Self::Err> { Ok(Self(s.into())) }
