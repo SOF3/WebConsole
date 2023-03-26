@@ -36,6 +36,7 @@ pub fn Error(props: &Props) -> Html {
                             || String::from("Switch server"),
                             |i18n| i18n.disp("base-nav-switch-server"),
                         ),
+                        focused = true,
                         callback = callback.reform(Into::into),
                     );
                 }

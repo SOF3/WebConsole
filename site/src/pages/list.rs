@@ -32,8 +32,8 @@ pub fn Comp(props: &Props) -> Html {
         (props.group.clone(), props.kind.clone()),
     );
 
-    let hidden = use_state_eq(HashSet::new);
-    let hidden = &*hidden;
+    let hidden_state = use_state(HashSet::new);
+    let hidden = &*hidden_state;
 
     let Some(def) =
         props
@@ -56,6 +56,22 @@ pub fn Comp(props: &Props) -> Html {
                     i18n = props.i18n.clone(),
                     def = def.clone(),
                     hidden = hidden.clone(),
+                    set_visible_callback = Callback::from({
+                        let hidden_state = hidden_state.clone();
+
+                        move |(field_path, visible)| {
+
+                            let mut hidden: HashSet<_> = (&*hidden_state).clone();
+
+                            if visible {
+                                hidden.remove(&field_path);
+                            } else {
+                                hidden.insert(field_path);
+                            }
+
+                            hidden_state.set(hidden);
+                        }
+                    })
                 );
             }
 
@@ -92,6 +108,8 @@ fn fallback() -> Html {
 
 #[function_component]
 fn FieldSelector(props: &FieldSelectorProps) -> Html {
+    let set_visible_callback = props.set_visible_callback.clone();
+
     defy! {
         nav(class = "panel") {
             p(class = "panel-heading") {
@@ -103,12 +121,17 @@ fn FieldSelector(props: &FieldSelectorProps) -> Html {
             }
 
             for field in props.def.fields.values() {
-                a(class = "panel-block") {
-                    span(class = "panel-icon") {
-                        input(type = "checkbox", checked = true);
-                    }
-                    + props.i18n.disp(&field.display_name);
-                }
+                PanelBlock(
+                    text = props.i18n.disp(&field.display_name),
+                    checked = !props.hidden.contains(&field.path),
+                    callback = Callback::from({
+                        let field_path = field.path.clone();
+                        let set_visible_callback = set_visible_callback.clone();
+                        move |checked: bool| {
+                            set_visible_callback.emit((field_path.clone(), checked));
+                        }
+                    }),
+                );
             }
         }
     }
@@ -116,9 +139,36 @@ fn FieldSelector(props: &FieldSelectorProps) -> Html {
 
 #[derive(Clone, PartialEq, Properties)]
 struct FieldSelectorProps {
-    i18n:   I18n,
-    def:    api::Desc,
-    hidden: HashSet<RcStr>,
+    i18n:                 I18n,
+    def:                  api::Desc,
+    hidden:               HashSet<RcStr>,
+    set_visible_callback: Callback<(RcStr, bool)>,
+}
+
+#[function_component]
+fn PanelBlock(props: &PanelBlockProps) -> Html {
+    let checked = props.checked;
+    let callback = props.callback.reform(move |()| !checked);
+
+    defy! {
+        a(class = "panel-block", onclick = callback.clone().reform(|_| ())) {
+            span(class = "panel-icon") {
+                input(
+                    type = "checkbox",
+                    checked = props.checked,
+                    onchange = callback.clone().reform(|_| ()),
+                );
+            }
+            + props.text.clone();
+        }
+    }
+}
+
+#[derive(PartialEq, Properties)]
+struct PanelBlockProps {
+    checked:  bool,
+    text:     AttrValue,
+    callback: Callback<bool>,
 }
 
 struct List {

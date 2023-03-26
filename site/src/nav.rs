@@ -31,11 +31,16 @@ pub fn Comp(props: &Props) -> HtmlResult {
     }
 
     Ok(defy! {
-        comps::TextButton(
-            default_value = Some(props.api.host.to_string()),
-            button = props.i18n.disp("base-nav-switch-server"),
-            callback = props.set_user_host.reform(Into::into),
-        );
+        div(class = "container") {
+            comps::TextButton(
+                default_value = Some(props.api.host.to_string()),
+                button = props.i18n.disp("base-nav-switch-server"),
+                callback = props.set_user_host.reform(Into::into),
+            );
+        }
+
+        hr;
+
         ul(class = "menu-list") {
             li {
                 Link<Route>(to = Route::Home) {

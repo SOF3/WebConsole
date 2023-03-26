@@ -13,8 +13,6 @@ use serde::{Deserialize, Deserializer};
 use yew::html::IntoPropValue;
 use yew::AttrValue;
 
-use crate::api;
-
 /// A global [`Rc`] passed in Properties that is always equal because there is only one instance.
 pub struct Grc<T>(Rc<T>);
 impl<T> Grc<T> {

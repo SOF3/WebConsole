@@ -69,7 +69,7 @@ fn Main(props: &MainProps) -> HtmlResult {
     Ok(defy! {
         section(class="main-content columns is-fullheight") {
             BrowserRouter {
-                aside(class = "column is-narrow is-fullheight section menu"){
+                aside(class = "column is-narrow is-fullheight section menu main-sidebar"){
                     nav::Comp(
                         i18n = i18n.clone(),
                         api = api.clone(),
