@@ -14,7 +14,7 @@ jobs:
         with:
           target: wasm32-unknown-unknown
       - run: wget -O - https://github.com/thedodd/trunk/releases/download/v0.16.0/trunk-x86_64-unknown-linux-gnu.tar.gz | tar xz trunk
-      - run: ../trunk build --release
+      - run: ../trunk build --release --public-url /WebConsole/
         working-directory: site
       - run: wget -O - https://github.com/casey/just/releases/download/1.13.0/just-1.13.0-x86_64-unknown-linux-musl.tar.gz | tar xz just
       - run: ./just build && cp local/WebConsole.phar site/dist
