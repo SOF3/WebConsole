@@ -7,27 +7,22 @@ pub fn TextButton(props: &Props) -> Html {
 
     defy! {
         div(class = "level") {
-            div(class = "level-left") {
-                div(class = "level-item") {
-                    input(
-                        ref = input_node.clone(),
-                        class = "input",
-                        type = "text",
-                        value = props.default_value.clone(),
-                        placeholder = props.placeholder.clone(),
+            div(class = "level-item") {
+                input(
+                    ref = input_node.clone(),
+                    class = "input",
+                    type = "text",
+                    value = props.default_value.clone(),
+                    placeholder = props.placeholder.clone(),
                     );
-                }
-
-                div(class = "level-item") {
-                    button(
-                        class = "button",
-                        onclick = props.callback.reform(move |_| {
-                            let input = input_node.cast::<web_sys::HtmlInputElement>().unwrap();
-                            input.value()
-                        }),
+                button(
+                    class = "button is-link",
+                    onclick = props.callback.reform(move |_| {
+                        let input = input_node.cast::<web_sys::HtmlInputElement>().unwrap();
+                        input.value()
+                    }),
                     ) {
-                        + props.button.clone();
-                    }
+                    + props.button.clone();
                 }
             }
         }

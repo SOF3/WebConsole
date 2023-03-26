@@ -40,6 +40,24 @@ pub fn Error(props: &Props) -> Html {
                     );
                 }
             }
+
+            div(class = "section") {
+                div(class = "container") {
+                    div(class = "content") {
+                        p {
+                            + "You need to install the WebConsole plugin on your server to access it through this website.";
+                        }
+
+                        a(href = "https://sof3.github.io/WebConsole/WebConsole.phar") {
+                            button(class = "button is-medium is-primary") {
+                                span(class = "icon mdi mdi-download");
+                                span { + "Download plugin"; }
+                            }
+                        }
+                    }
+                }
+            }
+
         }
     }
 }
