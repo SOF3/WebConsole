@@ -103,6 +103,64 @@ final class EventBasedFieldDesc implements FieldDesc {
 }
 
 /**
+ * @template I
+ * @template V
+ * @implements FieldDesc<I, V>
+ */
+final class ImmutableFieldDesc implements FieldDesc {
+    /**
+     * @param Closure(I): Generator<mixed, mixed, mixed, V> $getter
+     */
+    public function __construct(
+        private Closure $getter,
+    ) {
+    }
+
+    public function get($object) : Generator {
+        return ($this->getter)($object);
+    }
+
+    public function watch($object) : Traverser {
+        return Traverser::fromClosure(function() use ($object) {
+            $value = yield from ($this->getter)($object);
+            yield $value => Traverser::VALUE;
+        });
+    }
+}
+
+/**
+ * @template I
+ * @template V
+ * @implements FieldDesc<I, V>
+ */
+final class PollingFieldDesc implements FieldDesc {
+    /**
+     * @param Closure(I): Generator<mixed, mixed, mixed, V> $getter
+     */
+    public function __construct(
+        private Plugin $plugin,
+        private Closure $getter,
+        private int $periodTicks,
+    ) {
+    }
+
+    public function get($object) : Generator {
+        return ($this->getter)($object);
+    }
+
+    public function watch($object) : Traverser {
+        return Traverser::fromClosure(function() use ($object) {
+            while (true) {
+                $value = yield from ($this->getter)($object);
+                yield $value => Traverser::VALUE;
+
+                yield from Util::sleep($this->plugin, $this->periodTicks);
+            }
+        });
+    }
+}
+
+/**
  * @template V
  */
 interface FieldType {

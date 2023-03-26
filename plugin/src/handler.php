@@ -13,6 +13,7 @@ use SOFe\AwaitGenerator\Channel;
 use SOFe\AwaitGenerator\Loading;
 use SOFe\AwaitGenerator\Traverser;
 use function array_keys;
+use function assert;
 use function count;
 use function explode;
 use function in_array;
@@ -255,21 +256,19 @@ final class Handler {
             yield "404 Not Found" => Traverser::VALUE;
         }));
     }
-
-    private function badRequest(string $message) : HttpResponse {
-        return new HttpResponse("HTTP/1.0", "400 Bad Request", new HttpHeaders, Traverser::fromClosure(function() use ($message) {
-            yield $message => Traverser::VALUE;
-        }));
-    }
 }
 
+/**
+ * @template I
+ */
 final class WatchHandler {
-    /** @var array<string, true> */
-    private array $objectSet;
+    /** @var array<string, Closure(): void> */
+    private array $objectSet = [];
 
     /**
+     * @param ObjectDef<I> $objectDef
      * @param Closure(string): bool $fieldFilter
-     * @param Channel<string> $channel
+     * @param Channel<mixed> $channel
      */
     public function __construct(
         private ObjectDef $objectDef,
@@ -279,6 +278,9 @@ final class WatchHandler {
     ) {
     }
 
+    /**
+     * @return Generator<mixed, mixed, mixed, void>
+     */
     public function watchObjects() {
         $watch = $this->objectDef->desc->watch($this->limit);
 
@@ -305,12 +307,15 @@ final class WatchHandler {
         }
     }
 
+    /**
+     * @param I $identity
+     */
     private function handleAddEvent($identity, string $name) : Generator {
         if ($this->limit !== null && count($this->objectSet) >= $this->limit) {
             return;
         }
 
-        if (isset($objectSet[$name])) {
+        if (isset($this->objectSet[$name])) {
             throw new RuntimeException("Object descriptor watch() yields AddObjectEvent for \"$name\" twice");
         }
 
@@ -320,20 +325,26 @@ final class WatchHandler {
             "item" => $initialObject,
         ]);
 
-        /** @var Closure(null): void $onLoaded */
+        /** @var ?Closure(): void $cancelFn */
         $cancelFn = null;
         $cancel = new Loading(function() use (&$cancelFn) {
             return yield from Await::promise(function($resolve) use (&$cancelFn) {
                 $cancelFn = $resolve;
             });
         });
+        assert($cancelFn !== null, "Loading closure and Await::promise initial are called synchronously");
 
         foreach ($this->objectDef->fields as $field) {
             Await::g2c($this->watchObjectField($field, $identity, $cancel));
         }
-        $objectSet[$name] = true;
+        $this->objectSet[$name] = $cancelFn;
     }
 
+    /**
+     * @param I $identity
+     * @param FieldDef<I, mixed> $field
+     * @param Loading<void> $cancel
+     */
     private function watchObjectField(FieldDef $field, $identity, Loading $cancel) : Generator {
         $watch = $field->desc->watch($identity);
 
@@ -368,10 +379,13 @@ final class WatchHandler {
         }
     }
 
+    /**
+     * @param I $identity
+     */
     private function handleRemoveEvent($identity, string $name) : Generator {
         false && yield;
 
-        if (!isset($objectSet[$name])) {
+        if (!isset($this->objectSet[$name])) {
             throw new RuntimeException("Object descriptor watch() yields RemoveObjectEvent for non-added object \"$name\"");
         }
 
@@ -379,7 +393,8 @@ final class WatchHandler {
             throw new RestartWatch;
         }
 
-        unset($objectSet[$name]);
+        $this->objectSet[$name]();
+        unset($this->objectSet[$name]);
 
         $this->channel->sendWithoutWait([
             "event" => "Removed",

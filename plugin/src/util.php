@@ -10,7 +10,9 @@ use pocketmine\event\Event;
 use pocketmine\event\EventPriority;
 use pocketmine\event\HandlerListManager;
 use pocketmine\plugin\Plugin;
+use pocketmine\scheduler\ClosureTask;
 use pocketmine\Server;
+use SOFe\AwaitGenerator\Await;
 use SOFe\AwaitGenerator\Channel;
 
 final class Util {
@@ -39,6 +41,24 @@ final class Util {
         } finally {
             foreach ($listeners as [$class, $listener]) {
                 HandlerListManager::global()->getListFor($class)->unregister($listener);
+            }
+        }
+    }
+
+    public static function sleep(Plugin $plugin, int $ticks) : Generator {
+        $ok = false;
+        /** @var ?ClosureTask $task */
+        $task = null;
+        try {
+            yield from Await::promise(function($resolve) use ($plugin, $ticks, &$task) {
+                $task = new ClosureTask($resolve);
+                $plugin->getScheduler()->scheduleDelayedTask($task, $ticks);
+            });
+            $ok = true;
+        } finally {
+            $handler = $task?->getHandler();
+            if (!$ok && $handler !== null) {
+                $handler->cancel();
             }
         }
     }

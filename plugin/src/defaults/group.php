@@ -18,5 +18,6 @@ final class Group {
             displayPriority: 0,
         ));
         Players::register($plugin, $registry);
+        Worlds::register($plugin, $registry);
     }
 }

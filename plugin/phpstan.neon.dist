@@ -1,18 +1,26 @@
 parameters:
-  level: 8
-  paths:
-    - src
-  ignoreErrors:
-    - # false && yield is idiomatic in await-generator
-      message: "#^Left side of && is always false\\.$#"
-      paths:
-        - src/*
-    - # Infinite loops terminated by Traverser->interrupt() is idiomatic in await-generator.
-      message: "#^While loop condition is always true\\.$#"
-      paths:
-        - src/*
+	level: 8
+	paths:
+		- src
+	ignoreErrors:
+		- # false && yield is idiomatic in await-generator
+			message: "#^Left side of && is always false\\.$#"
+			paths:
+				- src/*
+		- # Infinite loops terminated by Traverser->interrupt() is idiomatic in await-generator.
+			message: "#^While loop condition is always true\\.$#"
+			paths:
+				- src/*
+		- # A phpstan bug that does not handle generators in `fn(): generatorFunction()` properly.
+			message: "#^Anonymous function should return .+ but returns Generator\\<\\*NEVER\\*, \\*NEVER\\*, \\*NEVER\\*, .+\\>\\.$#"
+			paths:
+				- src/*
+		- # there is nothing wrong with throwing in finally
+			message: "#^(The overwriting throw is on this line\\.|This return is overwritten by a different one in the finally block below\\.)$#"
+			paths:
+				- src/*
 
 
 
 includes:
-  - ./phpstan-baseline.neon
+	- ./phpstan-baseline.neon
