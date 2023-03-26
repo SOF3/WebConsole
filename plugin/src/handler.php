@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace SOFe\WebConsole;
 
 use Closure;
+use Exception;
 use Generator;
+use RuntimeException;
 use SOFe\AwaitGenerator\Await;
+use SOFe\AwaitGenerator\Channel;
+use SOFe\AwaitGenerator\Loading;
 use SOFe\AwaitGenerator\Traverser;
 use function array_keys;
 use function count;
@@ -66,7 +70,10 @@ final class Handler {
 
         if ($request->address->method === "GET") {
             $isWatch = isset($request->address->query["watch"]);
-            $withExisting = isset($request->address->query["withExisting"]);
+            $limit = (int) $request->address->getQueryOnce("limit", 0);
+            if ($limit === 0) {
+                $limit = null;
+            }
 
             if ($name === null) {
                 /** @var Closure(string): bool $fieldFilter */
@@ -83,8 +90,8 @@ final class Handler {
                             "Cache-Control" => "no-cache",
                             "Content-Type" => "text/event-stream; charset=utf-8",
                         ]),
-                        Traverser::fromClosure(function() use ($objectDef, $fieldFilter, $withExisting) {
-                            yield from $this->watch($objectDef, $fieldFilter, $withExisting);
+                        Traverser::fromClosure(function() use ($objectDef, $fieldFilter, $limit) {
+                            yield from $this->watch($objectDef, $fieldFilter, $limit);
                         }),
                     );
                 } else {
@@ -94,8 +101,8 @@ final class Handler {
                         new HttpHeaders([
                             "Cache-Control" => "no-cache",
                         ]),
-                        Traverser::fromClosure(function() use ($objectDef, $fieldFilter) {
-                            yield from $this->list($objectDef, $fieldFilter);
+                        Traverser::fromClosure(function() use ($objectDef, $fieldFilter, $limit) {
+                            yield from $this->list($objectDef, $fieldFilter, $limit);
                         }),
                     );
                 }
@@ -113,32 +120,22 @@ final class Handler {
      * @param Closure(string): bool $fieldFilter
      * @return Generator<mixed, mixed, mixed, void>
      */
-    private function watch(ObjectDef $objectDef, Closure $fieldFilter, bool $withExisting) : Generator {
-        $list = $objectDef->desc->watch($withExisting);
+    private function watch(ObjectDef $objectDef, Closure $fieldFilter, ?int $limit) : Generator {
+        $channel = new Channel;
 
-        try {
-            while (yield from $list->next($event)) {
-                yield "data: " => Traverser::VALUE;
-                if ($event instanceof AddObjectEvent) {
-                    $item = yield from $this->populateObjectFields($objectDef, $event->item, $fieldFilter);
-                    yield $this->jsonEncode([
-                        "event" => "Added",
-                        "object" => $item,
-                    ]) => Traverser::VALUE;
-                } else {
-                    yield $this->jsonEncode([
-                        "event" => "Removed",
-                        "name" => $objectDef->desc->name($event->item),
-                    ]) => Traverser::VALUE;
-                }
+        Await::f2c(function() use ($objectDef, $fieldFilter, $limit, $channel) {
+            while (true) {
+                $watch = new WatchHandler($objectDef, $limit, $fieldFilter, $channel);
+                yield from $watch->watchObjects();
+            }
+        });
 
-                yield "\n\n" => Traverser::VALUE;
-            }
-        } finally {
-            $e = yield from $list->interrupt();
-            if ($e !== null) {
-                throw $e;
-            }
+        while (true) {
+            $message = yield from $channel->receive();
+
+            yield "data: " => Traverser::VALUE;
+            yield $this->jsonEncode($message) => Traverser::VALUE;
+            yield "\n\n" => Traverser::VALUE;
         }
     }
 
@@ -148,12 +145,19 @@ final class Handler {
      * @param Closure(string): bool $fieldFilter
      * @return Generator<mixed, mixed, mixed, void>
      */
-    private function list(ObjectDef $objectDef, Closure $fieldFilter) {
+    private function list(ObjectDef $objectDef, Closure $fieldFilter, ?int $limit) {
         $list = $objectDef->desc->list();
 
         try {
+            if ($limit !== null) {
+                $limit -= 1;
+                if ($limit < 0) {
+                    return;
+                }
+            }
+
             while (yield from $list->next($object)) {
-                $item = yield from $this->populateObjectFields($objectDef, $object, $fieldFilter);
+                $item = yield from AccessorUtil::populateObjectFields($objectDef, $object, $fieldFilter);
 
                 yield $this->jsonEncode($item) => Traverser::VALUE;
                 yield "\n" => Traverser::VALUE;
@@ -164,44 +168,6 @@ final class Handler {
                 throw $e;
             }
         }
-    }
-
-    /**
-     * @template I
-     * @param ObjectDef<I> $objectDef
-     * @param I $object
-     * @return Generator<mixed, mixed, mixed, array<string, mixed>>
-     */
-    private function populateObjectFields(ObjectDef $objectDef, $object, Closure $fieldFilter) : Generator {
-        $item = [
-            "_name" => $objectDef->desc->name($object),
-        ];
-
-        $futures = [];
-        foreach ($objectDef->fields as $field) {
-            if ($fieldFilter($field->path)) {
-                $futures[] = (function() use ($field, &$item, $object) {
-                    $fieldParts = explode(".", $field->path);
-                    $rawValue = yield from $field->desc->get($object);
-                    $fieldValue = $field->type->serializeValue($rawValue);
-
-                    /** @var array<string, mixed> $ptr */
-                    $ptr = &$item;
-                    foreach ($fieldParts as $fieldPart) {
-                        if (!isset($ptr[$fieldPart])) {
-                            $ptr[$fieldPart] = [];
-                        }
-                        $ptr = &$ptr[$fieldPart];
-                    }
-                    $ptr = $fieldValue;
-                    unset($ptr);
-                })();
-            }
-        }
-
-        yield from Await::all($futures);
-
-        return $item;
     }
 
     private function discovery() : HttpResponse {
@@ -288,5 +254,179 @@ final class Handler {
         return new HttpResponse("HTTP/1.0", "404 Not Found", new HttpHeaders, Traverser::fromClosure(function() {
             yield "404 Not Found" => Traverser::VALUE;
         }));
+    }
+
+    private function badRequest(string $message) : HttpResponse {
+        return new HttpResponse("HTTP/1.0", "400 Bad Request", new HttpHeaders, Traverser::fromClosure(function() use ($message) {
+            yield $message => Traverser::VALUE;
+        }));
+    }
+}
+
+final class WatchHandler {
+    /** @var array<string, true> */
+    private array $objectSet;
+
+    /**
+     * @param Closure(string): bool $fieldFilter
+     * @param Channel<string> $channel
+     */
+    public function __construct(
+        private ObjectDef $objectDef,
+        private ?int $limit,
+        private Closure $fieldFilter,
+        private Channel $channel,
+    ) {
+    }
+
+    public function watchObjects() {
+        $watch = $this->objectDef->desc->watch($this->limit);
+
+        try {
+            while (yield from $watch->next($event)) {
+                $identity = $event->item;
+                $name = $this->objectDef->desc->name($identity);
+
+                if ($event instanceof AddObjectEvent) {
+                    yield from $this->handleAddEvent($identity, $name);
+                } elseif ($event instanceof RemoveObjectEvent) {
+                    try {
+                        yield from $this->handleRemoveEvent($identity, $name);
+                    } catch(RestartWatch $e) {
+                        return;
+                    }
+                }
+            }
+        } finally {
+            $e = yield from $watch->interrupt();
+            if ($e !== null) {
+                throw $e;
+            }
+        }
+    }
+
+    private function handleAddEvent($identity, string $name) : Generator {
+        if ($this->limit !== null && count($this->objectSet) >= $this->limit) {
+            return;
+        }
+
+        if (isset($objectSet[$name])) {
+            throw new RuntimeException("Object descriptor watch() yields AddObjectEvent for \"$name\" twice");
+        }
+
+        $initialObject = yield from AccessorUtil::populateObjectFields($this->objectDef, $identity, $this->fieldFilter);
+        $this->channel->sendWithoutWait([
+            "event" => "Added",
+            "item" => $initialObject,
+        ]);
+
+        /** @var Closure(null): void $onLoaded */
+        $cancelFn = null;
+        $cancel = new Loading(function() use (&$cancelFn) {
+            return yield from Await::promise(function($resolve) use (&$cancelFn) {
+                $cancelFn = $resolve;
+            });
+        });
+
+        foreach ($this->objectDef->fields as $field) {
+            Await::g2c($this->watchObjectField($field, $identity, $cancel));
+        }
+        $objectSet[$name] = true;
+    }
+
+    private function watchObjectField(FieldDef $field, $identity, Loading $cancel) : Generator {
+        $watch = $field->desc->watch($identity);
+
+        try {
+            while (true) {
+                [$which, $hasNext] = yield from Await::safeRace([
+                    $cancel->get(),
+                    $watch->next($newValue),
+                ]);
+
+                if ($which === 0) {
+                    // canceled
+                    return;
+                }
+
+                if (!$hasNext) {
+                    return;
+                }
+
+                $this->channel->sendWithoutWait([
+                    "event" => "FieldUpdate",
+                    "name" => $this->objectDef->desc->name($identity),
+                    "field" => $field->path,
+                    "value" => $newValue,
+                ]);
+            }
+        } finally {
+            $e = yield from $watch->interrupt();
+            if ($e !== null) {
+                throw $e;
+            }
+        }
+    }
+
+    private function handleRemoveEvent($identity, string $name) : Generator {
+        false && yield;
+
+        if (!isset($objectSet[$name])) {
+            throw new RuntimeException("Object descriptor watch() yields RemoveObjectEvent for non-added object \"$name\"");
+        }
+
+        if ($this->limit !== null) {
+            throw new RestartWatch;
+        }
+
+        unset($objectSet[$name]);
+
+        $this->channel->sendWithoutWait([
+            "event" => "Removed",
+            "name" => $name,
+        ]);
+    }
+}
+
+final class RestartWatch extends Exception {
+}
+
+final class AccessorUtil {
+    /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
+     * @param I $identity
+     * @return Generator<mixed, mixed, mixed, array<string, mixed>>
+     */
+    public static function populateObjectFields(ObjectDef $objectDef, $identity, Closure $fieldFilter) : Generator {
+        $item = [
+            "_name" => $objectDef->desc->name($identity),
+        ];
+
+        $futures = [];
+        foreach ($objectDef->fields as $field) {
+            if ($fieldFilter($field->path)) {
+                $futures[] = (function() use ($field, &$item, $identity) {
+                    $fieldParts = explode(".", $field->path);
+                    $rawValue = yield from $field->desc->get($identity);
+                    $fieldValue = $field->type->serializeValue($rawValue);
+
+                    /** @var array<string, mixed> $ptr */
+                    $ptr = &$item;
+                    foreach ($fieldParts as $fieldPart) {
+                        if (!isset($ptr[$fieldPart])) {
+                            $ptr[$fieldPart] = [];
+                        }
+                        $ptr = &$ptr[$fieldPart];
+                    }
+                    $ptr = $fieldValue;
+                    unset($ptr);
+                })();
+            }
+        }
+
+        yield from Await::all($futures);
+
+        return $item;
     }
 }

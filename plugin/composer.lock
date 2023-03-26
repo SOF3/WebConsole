@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9a1350863c23b9138b2fbfb7508faf64",
+    "content-hash": "7862d60407939623f78d742c941fc2e3",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -589,16 +589,16 @@
         },
         {
             "name": "pocketmine/locale-data",
-            "version": "2.18.3",
+            "version": "2.19.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/Language.git",
-                "reference": "da25bfe9ee4822a84feb9b7e620c56ad4000aed0"
+                "reference": "71af5f9bd23b4e4bad8920dac7f4fe08e5205f7d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/Language/zipball/da25bfe9ee4822a84feb9b7e620c56ad4000aed0",
-                "reference": "da25bfe9ee4822a84feb9b7e620c56ad4000aed0",
+                "url": "https://api.github.com/repos/pmmp/Language/zipball/71af5f9bd23b4e4bad8920dac7f4fe08e5205f7d",
+                "reference": "71af5f9bd23b4e4bad8920dac7f4fe08e5205f7d",
                 "shasum": ""
             },
             "type": "library",
@@ -606,9 +606,9 @@
             "description": "Language resources used by PocketMine-MP",
             "support": {
                 "issues": "https://github.com/pmmp/Language/issues",
-                "source": "https://github.com/pmmp/Language/tree/2.18.3"
+                "source": "https://github.com/pmmp/Language/tree/2.19.5"
             },
-            "time": "2023-01-17T21:43:36+00:00"
+            "time": "2023-03-19T16:45:15+00:00"
         },
         {
             "name": "pocketmine/log",
@@ -780,16 +780,16 @@
         },
         {
             "name": "pocketmine/pocketmine-mp",
-            "version": "4.17.0",
+            "version": "4.17.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/PocketMine-MP.git",
-                "reference": "9564c815822343fcfa5ef5c700491ff041581503"
+                "reference": "00286e761c7461aa64950efa23f6492d29ea7e84"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/PocketMine-MP/zipball/9564c815822343fcfa5ef5c700491ff041581503",
-                "reference": "9564c815822343fcfa5ef5c700491ff041581503",
+                "url": "https://api.github.com/repos/pmmp/PocketMine-MP/zipball/00286e761c7461aa64950efa23f6492d29ea7e84",
+                "reference": "00286e761c7461aa64950efa23f6492d29ea7e84",
                 "shasum": ""
             },
             "require": {
@@ -831,7 +831,7 @@
                 "pocketmine/classloader": "^0.2.0",
                 "pocketmine/color": "^0.3.0",
                 "pocketmine/errorhandler": "^0.6.0",
-                "pocketmine/locale-data": "~2.18.0",
+                "pocketmine/locale-data": "~2.19.0",
                 "pocketmine/log": "^0.4.0",
                 "pocketmine/log-pthreads": "^0.4.0",
                 "pocketmine/math": "^0.4.0",
@@ -844,7 +844,7 @@
                 "webmozart/path-util": "^2.3"
             },
             "require-dev": {
-                "phpstan/phpstan": "1.10.6",
+                "phpstan/phpstan": "1.10.7",
                 "phpstan/phpstan-phpunit": "^1.1.0",
                 "phpstan/phpstan-strict-rules": "^1.2.0",
                 "phpunit/phpunit": "^9.2"
@@ -866,7 +866,7 @@
             "homepage": "https://pmmp.io",
             "support": {
                 "issues": "https://github.com/pmmp/PocketMine-MP/issues",
-                "source": "https://github.com/pmmp/PocketMine-MP/tree/4.17.0"
+                "source": "https://github.com/pmmp/PocketMine-MP/tree/4.17.1"
             },
             "funding": [
                 {
@@ -878,7 +878,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2023-03-14T18:14:40+00:00"
+            "time": "2023-03-22T22:35:24+00:00"
         },
         {
             "name": "pocketmine/raklib",
@@ -1187,16 +1187,16 @@
         },
         {
             "name": "sof3/await-generator",
-            "version": "dev-traverser-generics",
+            "version": "dev-safe-race",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SOF3/await-generator.git",
-                "reference": "ea9bcfe384df60a96aa403e1c933c31dc15258fd"
+                "reference": "2d2f0a7abc822bca92bf63c4bb5f4bdb42b1bb9a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SOF3/await-generator/zipball/ea9bcfe384df60a96aa403e1c933c31dc15258fd",
-                "reference": "ea9bcfe384df60a96aa403e1c933c31dc15258fd",
+                "url": "https://api.github.com/repos/SOF3/await-generator/zipball/2d2f0a7abc822bca92bf63c4bb5f4bdb42b1bb9a",
+                "reference": "2d2f0a7abc822bca92bf63c4bb5f4bdb42b1bb9a",
                 "shasum": ""
             },
             "require": {
@@ -1227,9 +1227,9 @@
             "description": "Use async/await in PHP using generators",
             "support": {
                 "issues": "https://github.com/SOF3/await-generator/issues",
-                "source": "https://github.com/SOF3/await-generator/tree/traverser-generics"
+                "source": "https://github.com/SOF3/await-generator/tree/safe-race"
             },
-            "time": "2023-03-15T13:03:37+00:00"
+            "time": "2023-03-25T11:24:36+00:00"
         },
         {
             "name": "symfony/filesystem",
@@ -2419,16 +2419,16 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "1.10.6",
+            "version": "1.10.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "50d089a3e0904b0fe7e2cf2d4fd37d427d64235a"
+                "reference": "0166aef76e066f0dd2adc2799bdadfa1635711e9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/50d089a3e0904b0fe7e2cf2d4fd37d427d64235a",
-                "reference": "50d089a3e0904b0fe7e2cf2d4fd37d427d64235a",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/0166aef76e066f0dd2adc2799bdadfa1635711e9",
+                "reference": "0166aef76e066f0dd2adc2799bdadfa1635711e9",
                 "shasum": ""
             },
             "require": {
@@ -2457,8 +2457,11 @@
                 "static analysis"
             ],
             "support": {
+                "docs": "https://phpstan.org/user-guide/getting-started",
+                "forum": "https://github.com/phpstan/phpstan/discussions",
                 "issues": "https://github.com/phpstan/phpstan/issues",
-                "source": "https://github.com/phpstan/phpstan/tree/1.10.6"
+                "security": "https://github.com/phpstan/phpstan/security/policy",
+                "source": "https://github.com/phpstan/phpstan-src"
             },
             "funding": [
                 {
@@ -2474,7 +2477,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-03-09T16:55:12+00:00"
+            "time": "2023-03-24T10:28:16+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

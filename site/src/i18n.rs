@@ -13,9 +13,8 @@ impl I18n {
     pub fn disp(&self, id: &str) -> String { self.disp_with(id, fluent_args![]) }
 
     pub fn disp_with(&self, id: &str, args: FluentArgs) -> String {
-        let pat = match self.bundle.get_message(id).and_then(|message| message.value()) {
-            Some(pat) => pat,
-            None => return format!("Missing translation: \"{id}\""),
+        let Some(pat) = self.bundle.get_message(id).and_then(|message| message.value()) else {
+            return format!("Missing translation: \"{id}\"");
         };
 
         let mut errors = Vec::new();

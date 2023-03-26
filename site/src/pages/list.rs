@@ -7,19 +7,18 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use crate::i18n::I18n;
-use crate::util::Grc;
-use crate::{api, comps, util};
+use crate::util::{self, Grc, RcStr};
+use crate::{api, comps};
 
 #[function_component]
 pub fn Comp(props: &Props) -> Html {
-    let api = match props
+    let Some(api) = props
         .discovery
         .apis
         .get(&api::GroupKindRef { group: props.group.as_str(), kind: props.kind.as_str() }
             as &dyn api::GroupKindDyn)
-    {
-        Some(api) => api,
-        None => return defy! { + "Error: unknown API"; },
+    else {
+        return defy! { + "Error: unknown API"; }
     };
 
     let list_display_name = props.i18n.disp(&api.display_name);
@@ -36,15 +35,14 @@ pub fn Comp(props: &Props) -> Html {
     let hidden = use_state_eq(HashSet::new);
     let hidden = &*hidden;
 
-    let def =
-        match props
+    let Some(def) =
+        props
             .discovery
             .apis
             .get(&api::GroupKindRef { group: &props.group, kind: &props.kind }
                 as &dyn api::GroupKindDyn)
-        {
-            Some(def) => def,
-            None => return defy! { +"no such type"; },
+        else {
+            return defy! { +"no such type"; }
         };
 
     defy! {
@@ -79,7 +77,7 @@ pub fn Comp(props: &Props) -> Html {
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
-    pub api:       util::Grc<api::Client>,
+    pub api:       Grc<api::Client>,
     pub i18n:      I18n,
     pub discovery: Grc<api::Discovery>,
     pub group:     AttrValue,
@@ -120,7 +118,7 @@ fn FieldSelector(props: &FieldSelectorProps) -> Html {
 struct FieldSelectorProps {
     i18n:   I18n,
     def:    api::Desc,
-    hidden: HashSet<util::RcStr>,
+    hidden: HashSet<RcStr>,
 }
 
 struct List {
@@ -165,11 +163,17 @@ impl Component for List {
         match msg {
             ListMsg::Event(Ok(event)) => {
                 match event {
-                    api::ObjectEvent::Added { object } => {
+                    api::ObjectEvent::Added { item: object } => {
                         self.objects.insert(object.name.clone(), object);
                     }
                     api::ObjectEvent::Removed { name } => {
-                        self.objects.remove(&name);
+                        self.objects.remove(&*name);
+                    }
+                    api::ObjectEvent::FieldUpdate { name, field, value } => {
+                        let Some(object) = self.objects.get_mut(&*name) else { return false };
+                        if let Err(err) = util::set_json_path(&mut object.fields, &*field, value) {
+                            log::warn!("invalid json path: {err:?}");
+                        }
                     }
                 }
                 true
@@ -221,7 +225,7 @@ impl Component for List {
                             div(class = "card-content") {
                                 div(class = "content") {
                                     for &field in &fields {
-                                        if let Some(value) = resolve_path(&field.path, object) {
+                                        if let Some(value) = util::get_json_path(&object.fields, &field.path) {
                                             span(class = "tag") {
                                                 + i18n.disp(&field.display_name);
                                             }
@@ -250,26 +254,10 @@ enum ListMsg {
 
 #[derive(Clone, PartialEq, Properties)]
 struct ListProps {
-    api:    util::Grc<api::Client>,
+    api:    Grc<api::Client>,
     i18n:   I18n,
     group:  AttrValue,
     kind:   AttrValue,
     def:    api::Desc,
-    hidden: HashSet<util::RcStr>,
-}
-
-fn resolve_path<'t>(path: &str, object: &'t api::Object) -> Option<&'t serde_json::Value> {
-    let mut field = &object.fields;
-
-    for part in path.split(".") {
-        if !part.is_empty() {
-            let map = match field {
-                serde_json::Value::Object(map) => map,
-                _ => return None,
-            };
-            field = map.get(part)?;
-        }
-    }
-
-    Some(field)
+    hidden: HashSet<RcStr>,
 }

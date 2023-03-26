@@ -16,7 +16,7 @@ use serde::Deserialize;
 use yew::hook;
 
 use crate::i18n::{self, I18n};
-use crate::util::{self, Grc, RcStr, StreamWith};
+use crate::util::{Grc, HasId, IdMap, RcStr, StreamWith};
 
 #[derive(Deserialize)]
 struct UrlQuery {
@@ -25,28 +25,22 @@ struct UrlQuery {
 
 pub const LOCAL_STORAGE_KEY: &str = "webconsole:apiserver-addr";
 
-#[hook]
-pub fn use_client(user_host: Option<RcStr>) -> Grc<Client> {
-    let host = (||{
-            if let Some(host) = user_host {
-                return host;
-            }
+pub fn infer_host() -> RcStr {
+    if let Ok(search) = gloo::utils::window().location().search() {
+        if let Ok(query) = serde_qs::from_str::<UrlQuery>(&search) {
+            return query.server;
+        }
+    }
 
-            if let Ok(search) = gloo::utils::window().location().search() {
-                if let Ok(query) = serde_qs::from_str::<UrlQuery>(&search) {
-                    return query.server;
-                }
-            }
+    if let Ok(storage) = gloo::storage::LocalStorage::get::<RcStr>(LOCAL_STORAGE_KEY) {
+        return storage;
+    }
 
-            if let Ok(storage) = gloo::storage::LocalStorage::get::<RcStr>(LOCAL_STORAGE_KEY) {
-                return storage;
-            }
-
-            RcStr::new("http://localhost:14875")
-        })();
-
-    Grc::new(Client { host })
+    RcStr::new("http://localhost:14875")
 }
+
+#[hook]
+pub fn use_client(host: RcStr) -> Grc<Client> { Grc::new(Client { host }) }
 
 pub struct Client {
     pub host: RcStr,
@@ -171,8 +165,8 @@ impl Client {
 
 #[derive(Deserialize, PartialEq, Eq)]
 pub struct Discovery {
-    pub groups: util::IdMap<RcStr, Group>,
-    pub apis:   util::IdMap<GroupKind, Desc>,
+    pub groups: IdMap<RcStr, Group>,
+    pub apis:   IdMap<GroupKind, Desc>,
 }
 
 #[derive(Deserialize, Clone, PartialEq, Eq)]
@@ -180,9 +174,9 @@ pub struct Desc {
     #[serde(flatten)]
     pub id:           GroupKind,
     pub display_name: i18n::Key,
-    pub fields:       util::IdMap<RcStr, FieldDef>,
+    pub fields:       IdMap<RcStr, FieldDef>,
 }
-impl util::HasId<GroupKind> for Desc {
+impl HasId<GroupKind> for Desc {
     fn id(&self) -> GroupKind { self.id.clone() }
 }
 
@@ -193,7 +187,7 @@ pub struct FieldDef {
     #[serde(rename = "type")]
     pub ty:           FieldType,
 }
-impl util::HasId<RcStr> for FieldDef {
+impl HasId<RcStr> for FieldDef {
     fn id(&self) -> RcStr { self.path.clone() }
 }
 
@@ -205,7 +199,7 @@ pub enum FieldType {
     Float64 {},
     Bool {},
     Enum {
-        options: util::IdMap<RcStr, EnumOption>,
+        options: IdMap<RcStr, EnumOption>,
     },
     Object {
         #[serde(flatten)]
@@ -218,7 +212,7 @@ pub enum FieldType {
         item: Box<FieldType>,
     },
     Compound {
-        fields: util::IdMap<RcStr, CompoundSubfield>,
+        fields: IdMap<RcStr, CompoundSubfield>,
     },
 }
 
@@ -230,7 +224,7 @@ pub struct CompoundSubfield {
     ty:   FieldType,
 }
 
-impl util::HasId<RcStr> for CompoundSubfield {
+impl HasId<RcStr> for CompoundSubfield {
     fn id(&self) -> RcStr { self.key.clone() }
 }
 
@@ -240,7 +234,7 @@ pub struct EnumOption {
     pub i18n: i18n::Key,
 }
 
-impl util::HasId<RcStr> for EnumOption {
+impl HasId<RcStr> for EnumOption {
     fn id(&self) -> RcStr { self.id.clone() }
 }
 
@@ -250,7 +244,7 @@ pub struct Group {
     pub display_name:     i18n::Key,
     pub display_priority: u32,
 }
-impl util::HasId<RcStr> for Group {
+impl HasId<RcStr> for Group {
     fn id(&self) -> RcStr { self.id.clone() }
 }
 
@@ -315,6 +309,7 @@ pub struct Object {
 #[derive(Debug, Deserialize)]
 #[serde(tag = "event")]
 pub enum ObjectEvent {
-    Added { object: Object },
-    Removed { name: String },
+    Added { item: Object },
+    Removed { name: RcStr },
+    FieldUpdate { name: RcStr, field: RcStr, value: serde_json::Value },
 }

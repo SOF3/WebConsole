@@ -3,4 +3,5 @@ projects:
     path: plugin
     libs:
       - src: SOF3/await-generator/await-generator
-        version: ^3.4.2
+        version: ^3.4.3
+        branch: safe-race

@@ -13,6 +13,8 @@ use serde::{Deserialize, Deserializer};
 use yew::html::IntoPropValue;
 use yew::AttrValue;
 
+use crate::api;
+
 /// A global [`Rc`] passed in Properties that is always equal because there is only one instance.
 pub struct Grc<T>(Rc<T>);
 impl<T> Grc<T> {
@@ -33,9 +35,13 @@ impl<T> ops::Deref for Grc<T> {
 pub struct RcStr(pub Rc<str>);
 
 impl RcStr {
-    pub fn new(s: impl Into<Rc<str>>) -> Self {
-        Self(s.into())
-    }
+    pub fn new(s: impl Into<Rc<str>>) -> Self { Self(s.into()) }
+
+    pub fn to_istring(&self) -> AttrValue { AttrValue::Rc(self.0.clone()) }
+}
+
+impl From<String> for RcStr {
+    fn from(value: String) -> Self { Self(Rc::from(value)) }
 }
 
 impl FromStr for RcStr {
@@ -166,4 +172,36 @@ impl<S: Stream + Unpin, T> Stream for StreamWith<S, T> {
     ) -> std::task::Poll<Option<Self::Item>> {
         self.project().stream.poll_next_unpin(cx)
     }
+}
+
+pub fn get_json_path<'t>(
+    mut value: &'t serde_json::Value,
+    path: &str,
+) -> Option<&'t serde_json::Value> {
+    for part in path.split(".") {
+        if !part.is_empty() {
+            let serde_json::Value::Object(map) = value else { return None };
+            value = map.get(part)?;
+        }
+    }
+
+    Some(value)
+}
+
+pub fn set_json_path(
+    mut object: &mut serde_json::Value,
+    path: &str,
+    value: serde_json::Value,
+) -> anyhow::Result<()> {
+    for part in path.split('.') {
+        let serde_json::Value::Object(map) = object else { anyhow::bail!("{path} is not under an object") };
+        object = match map.get_mut(part) {
+            Some(object) => object,
+            None => anyhow::bail!("{part:?} does not exist"),
+        };
+    }
+
+    *object = value;
+
+    Ok(())
 }

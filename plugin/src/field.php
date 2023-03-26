@@ -45,16 +45,16 @@ final class FieldDef {
  */
 interface FieldDesc {
     /**
-     * @param I $object
+     * @param I $identity
      * @return Generator<mixed, mixed, mixed, V>
      */
-    public function get($object) : Generator;
+    public function get($identity) : Generator;
 
     /**
-     * @param I $object
+     * @param I $identity
      * @return Traverser<V>
      */
-    public function watch($object) : Traverser;
+    public function watch($identity) : Traverser;
 }
 
 /**

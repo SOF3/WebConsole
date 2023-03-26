@@ -4,7 +4,7 @@ help:
 	just --list
 fmt:
 	cd plugin && vendor/bin/php-cs-fixer fix
-	cd site && cargo fmt
+	cd site && cargo fmt -- -l
 phpstan:
 	cd plugin && vendor/bin/phpstan analyze
 phpstan-baseline:

@@ -108,7 +108,7 @@ final class HttpServer {
                 $client->tick();
             } catch (HttpException|ErrorException $e) {
                 $client->close();
-                $this->logger->logException($e);
+                $this->logger->debug($e->getMessage());
             }
 
             if ($client->isClosed()) {
@@ -161,7 +161,7 @@ final class HttpClient {
                 yield from $this->run($handler);
             } catch(HttpException|ErrorException $e) {
                 $this->close();
-                $this->logger->logException($e);
+                $this->logger->debug($e->getMessage());
             }
         });
     }

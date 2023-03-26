@@ -98,13 +98,11 @@ final class PlayerObjectDesc implements ObjectDesc {
         });
     }
 
-    public function watch(bool $withExisting) : Traverser {
-        return Traverser::fromClosure(function() use ($withExisting) : Generator {
-            yield from Util::withListener($this->plugin, [PlayerLoginEvent::class, PlayerQuitEvent::class], function(Channel $channel) use ($withExisting) {
-                if ($withExisting) {
-                    foreach ($this->plugin->getServer()->getOnlinePlayers() as $player) {
-                        yield new AddObjectEvent($player) => Traverser::VALUE;
-                    }
+    public function watch(?int $limit) : Traverser {
+        return Traverser::fromClosure(function() : Generator {
+            yield from Util::withListener($this->plugin, [PlayerLoginEvent::class, PlayerQuitEvent::class], function(Channel $channel) {
+                foreach ($this->plugin->getServer()->getOnlinePlayers() as $player) {
+                    yield new AddObjectEvent($player) => Traverser::VALUE;
                 }
 
                 while (true) {

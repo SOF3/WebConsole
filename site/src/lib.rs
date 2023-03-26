@@ -1,8 +1,9 @@
 use defy::defy;
 use gloo::storage::Storage;
 use i18n::I18n;
+use util::{Grc, RcStr};
 use yew::prelude::*;
-use yew::suspense::{use_future, UseFutureHandle};
+use yew::suspense::{use_future_with_deps, UseFutureHandle};
 use yew_router::prelude::*;
 
 mod api;
@@ -14,21 +15,22 @@ mod util;
 
 #[function_component]
 pub fn App() -> Html {
-    let user_host_state = use_state(|| None::<util::RcStr>);
+    let user_host_state = use_state(|| api::infer_host());
     let user_host = (&*user_host_state).clone();
 
-    let set_user_host = Callback::from(move |host: util::RcStr| {
-        if let Err(err) = gloo::storage::LocalStorage::set(api::LOCAL_STORAGE_KEY, host.to_string()) {
+    let set_user_host = Callback::from(move |host: RcStr| {
+        if let Err(err) = gloo::storage::LocalStorage::set(api::LOCAL_STORAGE_KEY, host.to_string())
+        {
             log::error!("store host: {err:?}");
         }
-        user_host_state.set(Some(host));
+        user_host_state.set(host);
     });
 
     log::debug!("user_host = {user_host:?}");
 
     defy! {
-        Suspense(fallback = fallback()) {
-            Main(user_host = user_host, set_user_host = set_user_host);
+        Suspense(fallback = fallback(user_host.clone(), set_user_host.clone())) {
+            Main(host = user_host, set_user_host = set_user_host);
         }
     }
 }
@@ -41,17 +43,27 @@ fn Main(props: &MainProps) -> HtmlResult {
         x
     });
 
-    let api = api::use_client(props.user_host.clone());
-    let queries: UseFutureHandle<anyhow::Result<_>> = use_future(|| {
-        let api = api.clone();
-        async move {
-            let (locales, discovery) = futures::join!(api.locales(), api.discovery());
-            Ok((locales?, discovery?))
-        }
-    })?;
+    let api = api::use_client(props.host.clone());
+    let queries: UseFutureHandle<anyhow::Result<_>> = use_future_with_deps(
+        |_| {
+            let api = api.clone();
+            async move {
+                let (locales, discovery) = futures::join!(api.locales(), api.discovery());
+                Ok((locales?, discovery?))
+            }
+        },
+        api.host.clone(),
+    )?;
     let (i18n, discovery) = match &*queries {
         Ok(data) => data.clone(),
-        Err(err) => return Ok(html! { <pre>{ format!("Error: {err:?}") }</pre> }),
+        Err(err) => {
+            return Ok(defy! {
+                pages::error::Error(
+                    err = format!("{err:?}"),
+                    set_user_host = Some((api.host.clone(), set_user_host)),
+                );
+            })
+        }
     };
 
     Ok(defy! {
@@ -80,16 +92,26 @@ fn Main(props: &MainProps) -> HtmlResult {
 
 #[derive(Clone, PartialEq, Properties)]
 struct MainProps {
-    user_host: Option<util::RcStr>,
-    set_user_host: Callback<util::RcStr>,
+    host:          RcStr,
+    set_user_host: Callback<RcStr>,
 }
 
-fn fallback() -> Html {
+fn fallback(host: RcStr, set_user_host: Callback<RcStr>) -> Html {
     defy! {
         section(class = "hero is-fullheight") {
             div(class = "hero-body") {
                 p(class = "title has-text") {
                     + "Connecting to server\u{2026}";
+                }
+
+                div(class = "section") {
+                    div(class = "container") {
+                        comps::TextButton(
+                            default_value = Some(host.to_istring()),
+                            button = "Switch server",
+                            callback = set_user_host.reform(Into::into),
+                        );
+                    }
                 }
             }
         }
@@ -99,17 +121,12 @@ fn fallback() -> Html {
 #[derive(Routable, Clone, PartialEq)]
 enum Route {
     #[at("/:group/:kind")]
-    List { group: util::RcStr, kind: util::RcStr },
+    List { group: RcStr, kind: RcStr },
     #[at("/")]
     Home,
 }
 
-fn switch(
-    route: Route,
-    api: util::Grc<api::Client>,
-    i18n: I18n,
-    discovery: util::Grc<api::Discovery>,
-) -> Html {
+fn switch(route: Route, api: Grc<api::Client>, i18n: I18n, discovery: Grc<api::Discovery>) -> Html {
     defy! {
         match route {
             Route::List { group, kind } => {

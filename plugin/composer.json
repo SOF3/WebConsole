@@ -2,7 +2,7 @@
     "name": "sof3/webconsole",
     "type": "project",
     "require": {
-        "sof3/await-generator": "dev-traverser-generics",
+        "sof3/await-generator": "dev-safe-race",
         "pocketmine/pocketmine-mp": "^4.13.0"
     },
     "require-dev": {

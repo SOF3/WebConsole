@@ -135,17 +135,18 @@ interface ObjectDesc {
 
     /**
      * Watches the addition and removal of objects.
+     * It should initially yield all creation events first.
      *
      * The traverser yields an ObjectEvent indicating the addition or removal of an event.
      *
      * The returned traverser may be interrupted with an InterruptException,
      * in which case any backing queries should be terminated.
      *
-     * @param bool $withExisting If true, an AddObjectEvent is yielded for each existing item in `list()`
-     *                           before yielding new changes.
+     * @param int|null $limit If non null, he caller only handles the first `$limit` AddObjectEvents,
+     *                        so sending extra AddObjectEvents is pointless.
      * @return Traverser<AddObjectEvent<I>|RemoveObjectEvent<I>>
      */
-    public function watch(bool $withExisting) : Traverser;
+    public function watch(?int $limit) : Traverser;
 
     /**
      * Fetches an object given its name.
