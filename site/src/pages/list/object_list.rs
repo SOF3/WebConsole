@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use anyhow::Context as _;
 use defy::defy;
+use futures::channel::oneshot;
 use futures::StreamExt;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -11,8 +12,49 @@ use crate::util::{self, Grc, RcStr};
 use crate::{api, comps};
 
 pub struct ObjectList {
-    objects: BTreeMap<String, api::Object>,
-    err:     Option<String>,
+    objects:     BTreeMap<String, api::Object>,
+    err:         Option<String>,
+    shutdown_tx: Option<oneshot::Sender<()>>,
+}
+
+fn run_watch(ctx: &Context<ObjectList>, comp: &mut ObjectList) {
+    let (shutdown_tx, mut shutdown_rx) = oneshot::channel::<()>();
+
+    let callback = ctx.link().callback(|event| ObjectListMsg::Event(event));
+    let props = ctx.props();
+
+    spawn_local({
+        let api = props.api.clone();
+        let group = props.group.to_string();
+        let kind = props.kind.to_string();
+        async move {
+            match async {
+                let mut stream = api.watch(group, kind).await.context("watch for objects")?.fuse();
+
+                loop {
+                    let event: anyhow::Result<api::ObjectEvent> = futures::select! {
+                        event = stream.next() => match event {
+                            Some(event) => event,
+                            None => return Ok(()),
+                        },
+                        _ = shutdown_rx => return Ok(()),
+                    };
+                    callback.emit(event);
+                }
+            }
+            .await
+            {
+                Ok(()) => (),
+                Err(err) => callback.emit(Err(err)),
+            }
+        }
+    });
+
+    if let Some(old) = comp.shutdown_tx.replace(shutdown_tx) {
+        _ = old.send(());
+    }
+
+    comp.objects.clear();
 }
 
 impl Component for ObjectList {
@@ -20,32 +62,17 @@ impl Component for ObjectList {
     type Properties = ObjectListProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let props = ctx.props();
+        let mut obj = Self { objects: BTreeMap::new(), err: None, shutdown_tx: None };
 
-        let callback = ctx.link().callback(|event| ObjectListMsg::Event(event));
-        spawn_local({
-            let api = props.api.clone();
-            let group = props.group.to_string();
-            let kind = props.kind.to_string();
-            async move {
-                match async {
-                    let mut stream = api.watch(group, kind).await.context("watch for objects")?;
+        run_watch(ctx, &mut obj);
 
-                    while let Some(event) = stream.next().await {
-                        callback.emit(event);
-                    }
+        obj
+    }
 
-                    Ok(())
-                }
-                .await
-                {
-                    Ok(()) => (),
-                    Err(err) => callback.emit(Err(err)),
-                }
-            }
-        });
-
-        Self { objects: BTreeMap::new(), err: None }
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        if let Some(shutdown_tx) = self.shutdown_tx.take() {
+            _ = shutdown_tx.send(());
+        }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -72,6 +99,14 @@ impl Component for ObjectList {
                 true
             }
         }
+    }
+
+    fn changed(&mut self, ctx: &Context<Self>, old_props: &Self::Properties) -> bool {
+        if ctx.props().group != old_props.group || ctx.props().kind != old_props.kind {
+            run_watch(ctx, self);
+        }
+
+        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
