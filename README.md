@@ -12,6 +12,11 @@ without involving anh web-specific logic.
 The project also offers a webapp that connects to this API server
 to visualize server data and control the server without using commands.
 
+## How to use
+
+1. Install the [WebConsole plugin](https://sof3.github.io/WebConsole/WebConsole.phar) on your server.
+2. 
+
 ## Objectives
 
 ### Goals

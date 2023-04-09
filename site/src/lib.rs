@@ -15,22 +15,19 @@ mod util;
 
 #[function_component]
 pub fn App() -> Html {
-    let user_host_state = use_state(|| api::infer_host());
-    let user_host = (&*user_host_state).clone();
+    let client_config_state = use_state(|| api::infer_host());
+    let client_config = client_config_state.clone();
 
-    let set_user_host = Callback::from(move |host: RcStr| {
-        if let Err(err) = gloo::storage::LocalStorage::set(api::LOCAL_STORAGE_KEY, host.to_string())
-        {
+    let set_client_config = Callback::from(move |config: api::ClientConfig| {
+        if let Err(err) = gloo::storage::LocalStorage::set(api::LOCAL_STORAGE_KEY, &config) {
             log::error!("store host: {err:?}");
         }
-        user_host_state.set(host);
+        client_config_state.set(config);
     });
 
-    log::debug!("user_host = {user_host:?}");
-
     defy! {
-        Suspense(fallback = fallback(user_host.clone(), set_user_host.clone())) {
-            Main(host = user_host, set_user_host = set_user_host);
+        Suspense(fallback = fallback(client_config.host.clone(), set_client_config.clone())) {
+            Main(config = client_config, set_client_config = set_client_config);
         }
     }
 }
@@ -38,12 +35,12 @@ pub fn App() -> Html {
 #[function_component]
 fn Main(props: &MainProps) -> HtmlResult {
     let force_update_trigger = use_force_update();
-    let set_user_host = props.set_user_host.reform(move |x| {
+    let set_client_config = props.set_client_config.reform(move |x| {
         force_update_trigger.force_update();
         x
     });
 
-    let api = api::use_client(props.host.clone());
+    let api = api::use_client(props.host.clone(), props.passphrase.clone());
     let queries: UseFutureHandle<anyhow::Result<_>> = use_future_with_deps(
         |_| {
             let api = api.clone();
@@ -60,7 +57,7 @@ fn Main(props: &MainProps) -> HtmlResult {
             return Ok(defy! {
                 pages::error::Error(
                     err = format!("{err:?}"),
-                    set_user_host = Some((api.host.clone(), set_user_host)),
+                    set_client_config = Some((api.host.clone(), set_client_config)),
                 );
             })
         }
@@ -74,7 +71,7 @@ fn Main(props: &MainProps) -> HtmlResult {
                         i18n = i18n.clone(),
                         api = api.clone(),
                         discovery = discovery.clone(),
-                        set_user_host = set_user_host,
+                        set_client_config = set_client_config,
                     );
                 }
                 div(class="container column"){
@@ -92,11 +89,11 @@ fn Main(props: &MainProps) -> HtmlResult {
 
 #[derive(Clone, PartialEq, Properties)]
 struct MainProps {
-    host:          RcStr,
-    set_user_host: Callback<RcStr>,
+    config:          api::ClientConfig,
+    set_client_config: Callback<RcStr>,
 }
 
-fn fallback(host: RcStr, set_user_host: Callback<RcStr>) -> Html {
+fn fallback(host: RcStr, set_client_config: Callback<api::ClientConfig>) -> Html {
     defy! {
         section(class = "hero is-fullheight") {
             div(class = "hero-body") {
@@ -109,7 +106,7 @@ fn fallback(host: RcStr, set_user_host: Callback<RcStr>) -> Html {
                         comps::TextButton(
                             default_value = Some(host.to_istring()),
                             button = "Switch server",
-                            callback = set_user_host.reform(Into::into),
+                            callback = set_client_config.reform(Into::into),
                         );
                     }
                 }

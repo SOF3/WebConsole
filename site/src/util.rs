@@ -9,7 +9,7 @@ use std::{fmt, ops};
 use futures::{Stream, StreamExt};
 use pin_project::pin_project;
 use serde::de::{SeqAccess, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use yew::html::IntoPropValue;
 use yew::AttrValue;
 
@@ -67,6 +67,14 @@ impl Borrow<str> for RcStr {
 
 impl IntoPropValue<AttrValue> for RcStr {
     fn into_prop_value(self) -> AttrValue { AttrValue::Rc(self.0) }
+}
+
+impl Serialize for RcStr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+                (&*self.0).serialize(serializer)
+    }
 }
 
 impl<'de> Deserialize<'de> for RcStr {

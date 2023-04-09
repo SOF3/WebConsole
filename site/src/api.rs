@@ -8,13 +8,14 @@ use std::hash::Hash;
 use std::rc::Rc;
 
 use anyhow::Context;
+use base64::engine::general_purpose;
 use fluent::{FluentBundle, FluentResource};
 use futures::{Stream, StreamExt};
 use gloo::net::eventsource::futures::EventSource;
 use gloo::net::http;
 use gloo::storage::Storage as _;
 use serde::de::DeserializeOwned;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use yew::hook;
 
 use crate::i18n::{self, I18n};
@@ -27,14 +28,8 @@ struct UrlQuery {
 
 pub const LOCAL_STORAGE_KEY: &str = "webconsole:apiserver-addr";
 
-pub fn infer_host() -> RcStr {
-    if let Ok(search) = gloo::utils::window().location().search() {
-        if let Ok(query) = serde_qs::from_str::<UrlQuery>(&search) {
-            return query.server;
-        }
-    }
-
-    if let Ok(storage) = gloo::storage::LocalStorage::get::<RcStr>(LOCAL_STORAGE_KEY) {
+pub fn infer_host() -> ClientConfig {
+    if let Ok(storage) = gloo::storage::LocalStorage::get::<ClientConfig>(LOCAL_STORAGE_KEY) {
         return storage;
     }
 
@@ -42,10 +37,16 @@ pub fn infer_host() -> RcStr {
 }
 
 #[hook]
-pub fn use_client(host: RcStr) -> Grc<Client> { Grc::new(Client { host }) }
+pub fn use_client(host: RcStr, passphrase: RcStr) -> Grc<Client> { Grc::new(Client { config: ClientConfig{host, passphrase} }) }
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClientConfig {
+    pub host: RcStr,
+    pub passphrase: RcStr,
+}
 
 pub struct Client {
-    pub host: RcStr,
+    pub config: ClientConfig,
 }
 
 impl Client {
@@ -69,7 +70,7 @@ impl Client {
             }
         };
 
-        let resp = http::Request::new(&format!("{}/{prefer}.ftl", &self.host))
+        let resp = self.build_request(&format!("{prefer}.ftl"))
             .send()
             .await
             .context("request ftl file")?;
@@ -110,7 +111,7 @@ impl Client {
         async move { this.list_impl(&group, &kind).await }
     }
     async fn list_impl(&self, group: &str, kind: &str) -> anyhow::Result<Vec<Object>> {
-        let resp = http::Request::new(&format!("{}/{group}/{kind}", &self.host))
+        let resp = self.build_request(&format!("{group}/{kind}"))
             .send()
             .await
             .context("sending list request")?;
@@ -141,8 +142,8 @@ impl Client {
         kind: &str,
     ) -> anyhow::Result<impl Stream<Item = anyhow::Result<ObjectEvent>>> {
         let mut es = EventSource::new(&format!(
-            "{}/{group}/{kind}?watch=true&withExisting=true",
-            &self.host
+            "https://{}/{group}/{kind}?watch=true&withExisting=true",
+            &self.config.host,
         ))
         .context("instantiate EventSource to watch events")?;
         let sub = es.subscribe("message").context("subscribe to message events")?;
@@ -161,7 +162,17 @@ impl Client {
     }
 
     async fn request<T: DeserializeOwned>(&self, path: &str) -> anyhow::Result<T> {
-        Ok(http::Request::new(&format!("{}/{path}", &self.host)).send().await?.json::<T>().await?)
+        Ok(self.build_request(path).send().await?.json::<T>().await?)
+    }
+
+    fn build_request(&self, path: &str) -> http::Request {
+        http::Request::new(&format!("https://{}/{path}", &self.config.host))
+            .header("Authentication", &format!("Basic {}",
+                base64::display::Base64Display::new(
+                    format!("admin:{}", &self.config.passphrase).as_bytes(),
+                    &general_purpose::STANDARD,
+                ),
+            ))
     }
 }
 
