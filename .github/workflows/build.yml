@@ -1,7 +1,6 @@
 name: Build
 on:
   push:
-    branches: [master]
 
 jobs:
   build:
@@ -17,7 +16,7 @@ jobs:
       - run: ../trunk build --release --public-url /WebConsole/
         working-directory: site
       - run: wget -O - https://github.com/casey/just/releases/download/1.13.0/just-1.13.0-x86_64-unknown-linux-musl.tar.gz | tar xz just
-      - run: ./just build && cp local/WebConsole.phar site/dist
+      - run: ./just composer install --ignore-platform-reqs && ./just build && cp local/WebConsole.phar site/dist
       - uses: actions/upload-pages-artifact@v1
         with:
           path: site/dist
@@ -30,6 +29,69 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-20.04
+    if: 'github.ref_type == "branch" && github.ref_name == "master"'
     steps:
       - id: deployment
         uses: actions/deploy-pages@v1
+  stage-composer:
+    name: Stage Composer dist branch
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        module: [api, lib]
+    concurrency:
+      group: pharynx/${{github.ref}}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          mkdir /tmp/composer-stage
+          cp plugin/${{matrix.module}}/src /tmp/composer-stage/src
+      - name: prepare composer.json
+        run: |
+          <plugin/${{matrix.module}}/composer.json jq \
+            --arg ref_name "${{github.ref_name}}" \
+            --arg ref_type "${{github.ref_type}}" \
+            '{
+              name,
+              type,
+              require: .require | with_entries(
+                if .key | startswith("sof3/webconsole-") then
+                  {
+                    key,
+                    value: (
+                      if $ref_type == "branch" then
+                        "dev-" + $ref_name
+                      else
+                        "^" + ($ref_name | ltrimstr("v"))
+                      end
+                    )
+                  }
+                else
+                  .
+                end
+              ),
+              autoload,
+              authors,
+              license,
+            } +  if has("x-virion") then {"x-virion"} else null end' >/tmp/composer-stage/composer.json
+      - name: push to mirror
+        run: |
+          git clone git@github.com:SOF3/webconsole-${{matrix.module}} /tmp/mirror
+          cd /tmp/mirror
+          if [ ${{github.ref_type}} == "branch" ]; then
+            BRANCH=${{github.ref_name}}
+          else
+            BRANCH=release/${{github.ref_name}}
+          end
+          git checkout $BRANCH || git checkout -b $BRANCH
+          git rm -r src composer.json || true
+          mv /tmp/composer-stage/{composer.json,src} .
+          git add -A
+          git \
+            -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -am "${{github.event.head_commit.message}} (${{github.sha}})"
+          git push origin $BRANCH

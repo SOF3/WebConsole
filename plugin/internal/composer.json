@@ -1,0 +1,37 @@
+{
+    "name": "sof3/webconsole-internal",
+    "type": "pocketmine-plugin",
+    "require": {
+        "sof3/await-generator": "dev-safe-race",
+        "sof3/webconsole-lib": "*",
+        "sof3/webconsole-api": "*",
+        "pocketmine/pocketmine-mp": "^4.13.0"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.2",
+        "phpunit/phpunit": "^9.5",
+        "friendsofphp/php-cs-fixer": "^3.4",
+        "sof3/pharynx": "dev-composer-autoarg"
+    },
+    "minimum-stability": "dev",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../lib"
+        },
+        {
+            "type": "path",
+            "url": "../api"
+        }
+    ],
+    "autoload": {
+        "classmap": ["src"]
+    },
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "SOFe",
+            "email": "sofe2038@gmail.com"
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 {
-    "name": "sof3/webconsole",
-    "type": "project",
+    "name": "sof3/webconsole-api",
+    "type": "provided",
     "require": {
         "sof3/await-generator": "dev-safe-race",
         "pocketmine/pocketmine-mp": "^4.13.0"
@@ -11,9 +11,7 @@
         "friendsofphp/php-cs-fixer": "^3.4"
     },
     "autoload": {
-        "classmap": [
-            "src"
-        ]
+        "classmap": ["src"]
     },
     "license": "Apache-2.0",
     "authors": [

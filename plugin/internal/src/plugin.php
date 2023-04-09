@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace SOFe\WebConsole;
+namespace SOFe\WebConsole\Internal;
 
 use pocketmine\plugin\DisablePluginException;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\utils\Filesystem;
 use PrefixedLogger;
+use SOFe\WebConsole\Api\Registry;
+use SOFe\WebConsole\Defaults;
 
 use function count;
 use function explode;

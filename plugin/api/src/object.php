@@ -2,60 +2,11 @@
 
 declare(strict_types=1);
 
-namespace SOFe\WebConsole;
+namespace SOFe\WebConsole\Api;
 
 use Generator;
-use RuntimeException;
 use SOFe\AwaitGenerator\Traverser;
-use function array_key_exists;
 use function sprintf;
-
-final class Registry {
-    /** @var array<string, GroupDef> */
-    public array $groups = [];
-
-    /** @var array<string, ObjectDef<mixed>> */
-    public array $objectKinds = [];
-
-    /** @var array<string, FluentLocale> */
-    public array $fluentLocales = [];
-
-    public function registerGroup(GroupDef $def) : void {
-        if (isset($this->objectKinds[$def->id])) {
-            throw new RuntimeException("Object kind {$def->id} was already registered");
-        }
-
-        $this->groups[$def->id] = $def;
-    }
-
-    /**
-     * @param ObjectDef<mixed> $def
-     */
-    public function registerObject(ObjectDef $def) : void {
-        if (isset($this->objectKinds[$def->id()])) {
-            throw new RuntimeException("Object kind {$def->id()} was already registered");
-        }
-
-        $this->objectKinds[$def->id()] = $def;
-    }
-
-    /**
-     * @param FieldDef<mixed, mixed> $def
-     */
-    public function registerField(FieldDef $def) : void {
-        if (!isset($this->objectKinds[$def->objectId()])) {
-            throw new RuntimeException("Cannot register field for unknown object kind {$def->objectId()}");
-        }
-
-        $objectDef = $this->objectKinds[$def->objectId()];
-        $objectDef->fields[$def->path] = $def;
-    }
-
-    public function provideFluent(string $comp, string $locale, string $fluent) : void {
-        $this->fluentLocales[$locale] ??= new FluentLocale($locale);
-        $this->fluentLocales[$locale]->provide($comp, $fluent);
-    }
-}
 
 final class GroupDef {
     public function __construct(
@@ -63,25 +14,6 @@ final class GroupDef {
         public string $displayName,
         public int $displayPriority,
     ) {
-    }
-}
-
-final class FluentLocale {
-    /** @var array<string, true> */
-    public array $comps = [];
-    public string $fluent = "";
-
-    public function __construct(
-        public string $locale,
-    ) {
-    }
-
-    public function provide(string $comp, string $fluent) : void {
-        if (array_key_exists($comp, $this->comps)) {
-            throw new RuntimeException("Fluent bundle for \"$comp\" was provided multiple times");
-        }
-        $this->comps[$comp] = true;
-        $this->fluent .= $fluent . "\n";
     }
 }
 

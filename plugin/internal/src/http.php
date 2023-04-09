@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SOFe\WebConsole;
+namespace SOFe\WebConsole\Internal;
 
 use Closure;
 use ErrorException;

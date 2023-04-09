@@ -11,18 +11,18 @@ use pocketmine\world\World;
 use SOFe\AwaitGenerator\Channel;
 use SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\AwaitGenerator\Traverser;
-use SOFe\WebConsole\AddObjectEvent;
-use SOFe\WebConsole\FieldDef;
-use SOFe\WebConsole\ImmutableFieldDesc;
-use SOFe\WebConsole\IntFieldType;
-use SOFe\WebConsole\Main;
-use SOFe\WebConsole\ObjectDef;
-use SOFe\WebConsole\ObjectDesc;
-use SOFe\WebConsole\PollingFieldDesc;
-use SOFe\WebConsole\Registry;
-use SOFe\WebConsole\RemoveObjectEvent;
-use SOFe\WebConsole\StringFieldType;
-use SOFe\WebConsole\Util;
+use SOFe\WebConsole\Api\AddObjectEvent;
+use SOFe\WebConsole\Api\FieldDef;
+use SOFe\WebConsole\Api\ObjectDef;
+use SOFe\WebConsole\Api\ObjectDesc;
+use SOFe\WebConsole\Api\Registry;
+use SOFe\WebConsole\Api\RemoveObjectEvent;
+use SOFe\WebConsole\Internal\Main;
+use SOFe\WebConsole\Lib\ImmutableFieldDesc;
+use SOFe\WebConsole\Lib\IntFieldType;
+use SOFe\WebConsole\Lib\PollingFieldDesc;
+use SOFe\WebConsole\Lib\StringFieldType;
+use SOFe\WebConsole\Lib\Util;
 
 
 /**

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace SOFe\WebConsole\Defaults;
 
-use SOFe\WebConsole\GroupDef;
-use SOFe\WebConsole\Main;
-use SOFe\WebConsole\Registry;
+use SOFe\WebConsole\Api\GroupDef;
+use SOFe\WebConsole\Api\Registry;
+use SOFe\WebConsole\Internal\Main;
 
 final class Group {
     public const ID = "main";

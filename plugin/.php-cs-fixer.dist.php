@@ -6,9 +6,7 @@ use PhpCsFixer\Finder;
 return (function() {
     $finder = Finder::create();
 
-    $finder->append(["build.php"]);
-
-    foreach(["src"] as $root) {
+    foreach(["api/src", "lib/src", "internal/src"] as $root) {
         foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__ . "/" . $root)) as $file) {
             $file = realpath($file);
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SOFe\WebConsole;
+namespace SOFe\WebConsole\Internal;
 
 use Closure;
 use Exception;
@@ -12,6 +12,12 @@ use SOFe\AwaitGenerator\Await;
 use SOFe\AwaitGenerator\Channel;
 use SOFe\AwaitGenerator\Loading;
 use SOFe\AwaitGenerator\Traverser;
+use SOFe\WebConsole\Api\AddObjectEvent;
+use SOFe\WebConsole\Api\FieldDef;
+use SOFe\WebConsole\Api\ObjectDef;
+use SOFe\WebConsole\Api\Registry;
+use SOFe\WebConsole\Api\RemoveObjectEvent;
+
 use function array_keys;
 use function assert;
 use function count;

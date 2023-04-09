@@ -2,178 +2,18 @@
 
 declare(strict_types=1);
 
-namespace SOFe\WebConsole;
+namespace SOFe\WebConsole\Lib;
 
 use Closure;
-use Generator;
-use pocketmine\event\Event;
-use pocketmine\plugin\Plugin;
-use SOFe\AwaitGenerator\Channel;
-use SOFe\AwaitGenerator\Traverser;
+use SOFe\WebConsole\Api\FieldType;
+use SOFe\WebConsole\Api\ObjectDef;
+
 use function array_map;
-use function sprintf;
 
-/**
- * @template I the identifier type of the object
- * @template V the type of the object field
- */
-final class FieldDef {
-    /**
-     * @param FieldType<V> $type
-     * @param array<string, string> $metadata
-     * @param FieldDesc<I, V> $desc
-     */
-    public function __construct(
-        public string $objectGroup,
-        public string $objectKind,
-        public string $path,
-        public string $displayName,
-        public FieldType $type,
-        public array $metadata,
-        public FieldDesc $desc,
-    ) {
-    }
-
-    public function objectId() : string {
-        return sprintf("%s/%s", $this->objectGroup, $this->objectKind);
-    }
-}
-
-/**
- * @template I
- * @template V
- */
-interface FieldDesc {
-    /**
-     * @param I $identity
-     * @return Generator<mixed, mixed, mixed, V>
-     */
-    public function get($identity) : Generator;
-
-    /**
-     * @param I $identity
-     * @return Traverser<V>
-     */
-    public function watch($identity) : Traverser;
-}
-
-/**
- * @template I
- * @template V
- * @implements FieldDesc<I, V>
- */
-final class EventBasedFieldDesc implements FieldDesc {
-    /**
-     * @template E of Event
-     * @param list<class-string<E>> $events
-     * @param Closure(I): Generator<mixed, mixed, mixed, V> $getter
-     * @param Closure(E, I): bool $testEvent whether the event affects the object
-     */
-    public function __construct(
-        private Plugin $plugin,
-        private array $events,
-        private Closure $getter,
-        private Closure $testEvent,
-    ) {
-    }
-
-    public function get($object) : Generator {
-        return ($this->getter)($object);
-    }
-
-    public function watch($object) : Traverser {
-        return Traverser::fromClosure(function() use ($object) {
-            $previous = yield from ($this->getter)($object);
-            yield $previous => Traverser::VALUE;
-
-            yield from Util::withListener($this->plugin, $this->events, function(Channel $channel) use ($object, &$previous) {
-                while (true) {
-                    $event = yield from $channel->receive();
-                    if (($this->testEvent)($event, $object)) {
-                        $value = yield from ($this->getter)($object);
-                        if ($value !== $previous) {
-                            $previous = $value;
-                            yield $value => Traverser::VALUE;
-                        }
-                    }
-                }
-            });
-        });
-    }
-}
-
-/**
- * @template I
- * @template V
- * @implements FieldDesc<I, V>
- */
-final class ImmutableFieldDesc implements FieldDesc {
-    /**
-     * @param Closure(I): Generator<mixed, mixed, mixed, V> $getter
-     */
-    public function __construct(
-        private Closure $getter,
-    ) {
-    }
-
-    public function get($object) : Generator {
-        return ($this->getter)($object);
-    }
-
-    public function watch($object) : Traverser {
-        return Traverser::fromClosure(function() use ($object) {
-            $value = yield from ($this->getter)($object);
-            yield $value => Traverser::VALUE;
-        });
-    }
-}
-
-/**
- * @template I
- * @template V
- * @implements FieldDesc<I, V>
- */
-final class PollingFieldDesc implements FieldDesc {
-    /**
-     * @param Closure(I): Generator<mixed, mixed, mixed, V> $getter
-     */
-    public function __construct(
-        private Plugin $plugin,
-        private Closure $getter,
-        private int $periodTicks,
-    ) {
-    }
-
-    public function get($object) : Generator {
-        return ($this->getter)($object);
-    }
-
-    public function watch($object) : Traverser {
-        return Traverser::fromClosure(function() use ($object) {
-            while (true) {
-                $value = yield from ($this->getter)($object);
-                yield $value => Traverser::VALUE;
-
-                yield from Util::sleep($this->plugin, $this->periodTicks);
-            }
-        });
-    }
-}
-
-/**
- * @template V
- */
-interface FieldType {
-    /**
-     * @return array<string, mixed>
-     */
-    public function serializeType() : array;
-
-    /**
-     * @param V $value
-     */
-    public function serializeValue($value) : mixed;
-}
+// Field types are defined in the `lib` package instead of `api`
+// because implementations of `FieldType` may change or add,
+// subject to new field types supported by the web frontend or other clients.
+// Plugins may also implement their own field types that serialize to an existing type.
 
 /**
  * @implements FieldType<string>

@@ -14,16 +14,16 @@ use pocketmine\player\Player;
 use SOFe\AwaitGenerator\Channel;
 use SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\AwaitGenerator\Traverser;
-use SOFe\WebConsole\AddObjectEvent;
-use SOFe\WebConsole\EventBasedFieldDesc;
-use SOFe\WebConsole\FieldDef;
-use SOFe\WebConsole\FloatFieldType;
-use SOFe\WebConsole\Main;
-use SOFe\WebConsole\ObjectDef;
-use SOFe\WebConsole\ObjectDesc;
-use SOFe\WebConsole\Registry;
-use SOFe\WebConsole\RemoveObjectEvent;
-use SOFe\WebConsole\Util;
+use SOFe\WebConsole\Api\AddObjectEvent;
+use SOFe\WebConsole\Api\FieldDef;
+use SOFe\WebConsole\Api\ObjectDef;
+use SOFe\WebConsole\Api\ObjectDesc;
+use SOFe\WebConsole\Api\Registry;
+use SOFe\WebConsole\Api\RemoveObjectEvent;
+use SOFe\WebConsole\Internal\Main;
+use SOFe\WebConsole\Lib\EventBasedFieldDesc;
+use SOFe\WebConsole\Lib\FloatFieldType;
+use SOFe\WebConsole\Lib\Util;
 
 
 /**
