@@ -389,9 +389,9 @@ final class HttpHeaders {
      * @param array<string, string> $headers
      */
     public function __construct(public array $headers = []) {
-        $this->headers["Connection"] = "close";
-        $this->headers["Server"] = "PocketMine-MP WebConsole";
-        $this->headers["Access-Control-Allow-Origin"] = "*";
+        $this->headers["Connection"] ??= "close";
+        $this->headers["Server"] ??= "PocketMine-MP WebConsole";
+        $this->headers["Access-Control-Allow-Origin"] ??= "*";
     }
 
     public function parse(string $line) : bool {

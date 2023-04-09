@@ -59,6 +59,21 @@ pub fn Error(props: &Props) -> Html {
                 }
             }
 
+            div(class = "section") {
+                div(class = "container") {
+                    div(class = "content") {
+                        p {
+                            + "Certificate issue? Try visiting the server directly ";
+                            a(class = "link", href = host.to_istring(), target = "_blank") {
+                                + "in a new tab";
+                            }
+                            + ".";
+                        }
+                    }
+
+                    iframe(src = host.to_istring(), style = "display: none;");
+                }
+            }
         }
     }
 }

@@ -2,13 +2,14 @@
     "name": "sof3/webconsole",
     "type": "project",
     "require": {
-        "sof3/await-generator": "dev-safe-race",
+        "sof3/await-generator": "dev-composer-antigen-test",
         "pocketmine/pocketmine-mp": "^4.13.0"
     },
     "require-dev": {
         "phpstan/phpstan": "^1.2",
         "phpunit/phpunit": "^9.5",
-        "friendsofphp/php-cs-fixer": "^3.4"
+        "friendsofphp/php-cs-fixer": "^3.4",
+        "sof3/pharynx": "dev-composer-autoarg"
     },
     "autoload": {
         "classmap": [

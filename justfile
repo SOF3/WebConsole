@@ -31,3 +31,32 @@ pm: build
 	docker cp local/FakePlayer.phar webconsole_pm:/plugins/FakePlayer.phar
 	docker cp local/WebConsole.phar webconsole_pm:/plugins/WebConsole.phar
 	docker start webconsole_pm
+
+tls hostname ip_or_dns="DNS":
+	openssl req -x509 -newkey rsa:4096 \
+		-nodes \
+		-sha512 \
+		-keyout local/key.pem \
+		-out local/crt.pem \
+		-days 3650 \
+		-subj "/CN={{hostname}}" \
+		-addext "subjectAltName={{ip_or_dns}}:{{hostname}}"
+	cat local/crt.pem local/key.pem >local/certs.pem
+
+passwd:
+	if [[ ! -f local/passwd.txt ]]; then \
+		docker run -it --name webconsole_passwd httpd:2 htpasswd -c /webconsole_passwd.txt admin; \
+		docker cp webconsole_passwd:/webconsole_passwd.txt local/passwd.txt; \
+		docker rm webconsole_passwd; \
+	fi
+
+nginx: passwd
+	docker rm -f webconsole_nginx 2>/dev/null || true
+	docker create -it --rm \
+		--name webconsole_nginx \
+		--network host \
+		nginx
+	docker cp ./local webconsole_nginx:/etc/webconsole
+	docker cp ./nginx.conf webconsole_nginx:/etc/nginx/conf.d/default.conf
+	docker start webconsole_nginx
+	docker exec -u root webconsole_nginx chown -R nginx /etc/webconsole /etc/nginx/conf.d
