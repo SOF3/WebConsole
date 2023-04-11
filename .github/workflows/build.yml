@@ -42,7 +42,7 @@ jobs:
       matrix:
         module: [api, lib]
     concurrency:
-      group: pharynx/${{github.ref}}
+      group: pharynx/${{github.ref}}/${{matrix.module}}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v3
@@ -77,15 +77,19 @@ jobs:
               authors,
               license,
             } +  if has("x-virion") then {"x-virion"} else null end' >/tmp/composer-stage/composer.json
+      - uses: actions/checkout@v3
+        with:
+          repository: SOF3/webconsole-${{matrix.module}}
+          ssh-key: ${{matrix.module == 'api' && secrets.API_DEPLOY_KEY || secrets.LIB_DEPLOY_KEY}}
+          path: ..mirror
       - name: push to mirror
         run: |
-          git clone git@github.com:SOF3/webconsole-${{matrix.module}} /tmp/mirror
-          cd /tmp/mirror
+          cd ..mirror
           if [ ${{github.ref_type}} == "branch" ]; then
             BRANCH=${{github.ref_name}}
           else
             BRANCH=release/${{github.ref_name}}
-          end
+          fi
           git checkout $BRANCH || git checkout -b $BRANCH
           git rm -r src composer.json || true
           mv /tmp/composer-stage/{composer.json,src} .
