@@ -2,7 +2,7 @@
     "name": "sof3/webconsole-lib",
     "description": "Shading-safe library for WebConsole to call the API.",
     "require": {
-        "sof3/await-generator": "dev-safe-race",
+        "sof3/await-generator": "dev-pubsub-topic",
         "sof3/webconsole-api": "*",
         "pocketmine/pocketmine-mp": "^4.13.0"
     },

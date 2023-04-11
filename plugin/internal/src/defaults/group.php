@@ -17,7 +17,9 @@ final class Group {
             displayName: "main-group",
             displayPriority: 0,
         ));
+
         Players::register($plugin, $registry);
         Worlds::register($plugin, $registry);
+        Logging::register($plugin, $registry);
     }
 }

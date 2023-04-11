@@ -2,10 +2,11 @@
     "name": "sof3/webconsole-internal",
     "type": "pocketmine-plugin",
     "require": {
-        "sof3/await-generator": "dev-safe-race",
+        "sof3/await-generator": "dev-pubsub-topic",
         "sof3/webconsole-lib": "*",
         "sof3/webconsole-api": "*",
-        "pocketmine/pocketmine-mp": "^4.13.0"
+        "pocketmine/pocketmine-mp": "^4.13.0",
+        "ext-pthreads": "^4.2.1"
     },
     "require-dev": {
         "phpstan/phpstan": "^1.2",

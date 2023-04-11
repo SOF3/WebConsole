@@ -2,5 +2,5 @@ name: WebConsole
 author: SOFe
 version: 0.1.0
 api: 4.13.0
-main: SOFe\WebConsole\Main
+main: SOFe\WebConsole\Internal\Main
 load: STARTUP
