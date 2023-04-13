@@ -27,18 +27,38 @@ final class ObjectDef {
 
     /**
      * @param ObjectDesc<I> $desc
+     * @param ObjectMetadata[] $metadata
      */
     public function __construct(
         public string $group,
         public string $kind,
         public string $displayName,
         public ObjectDesc $desc,
+        public array $metadata,
     ) {
     }
 
     public function id() : string {
         return sprintf("%s/%s", $this->group, $this->kind);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getMetadata() : array {
+        $metadata = [];
+        foreach ($this->metadata as $datum) {
+            $datum->apply($metadata);
+        }
+        return $metadata;
+    }
+}
+
+interface ObjectMetadata {
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function apply(array &$metadata) : void;
 }
 
 /**

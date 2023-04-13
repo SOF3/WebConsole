@@ -176,21 +176,42 @@ pub struct Desc {
     #[serde(flatten)]
     pub id:           GroupKind,
     pub display_name: i18n::Key,
+    #[serde(default)]
+    pub metadata:     KnownObjectMetadata,
     pub fields:       IdMap<RcStr, FieldDef>,
 }
 impl HasId<GroupKind> for Desc {
     fn id(&self) -> GroupKind { self.id.clone() }
 }
 
+#[derive(Deserialize, Clone, PartialEq, Eq, Default)]
+pub struct KnownObjectMetadata {
+    #[serde(rename = "webconsole/site/hide-name")]
+    #[serde(default)]
+    pub hide_name: bool,
+}
+
 #[derive(Deserialize, Clone, PartialEq, Eq)]
 pub struct FieldDef {
     pub path:         RcStr,
     pub display_name: i18n::Key,
+    #[serde(default)]
+    pub metadata:     KnownFieldMetadata,
     #[serde(rename = "type")]
     pub ty:           FieldType,
 }
 impl HasId<RcStr> for FieldDef {
     fn id(&self) -> RcStr { self.path.clone() }
+}
+
+#[derive(Deserialize, Clone, PartialEq, Eq, Default)]
+pub struct KnownFieldMetadata {
+    #[serde(rename = "webconsole/site/display-priority")]
+    #[serde(default)]
+    pub display_priority: i32,
+    #[serde(rename = "webconsole/site/hide-by-default")]
+    #[serde(default)]
+    pub hide_by_default:  bool,
 }
 
 #[derive(Deserialize, Clone, PartialEq, Eq)]

@@ -21,6 +21,7 @@ use SOFe\WebConsole\Api\RemoveObjectEvent;
 use SOFe\WebConsole\Internal\Main;
 use SOFe\WebConsole\Lib\ImmutableFieldDesc;
 use SOFe\WebConsole\Lib\IntFieldType;
+use SOFe\WebConsole\Lib\Metadata;
 use SOFe\WebConsole\Lib\StringFieldType;
 use SOFe\WebConsole\Lib\Util;
 use Threaded;
@@ -30,6 +31,8 @@ use function bin2hex;
 use function count;
 use function microtime;
 use function random_bytes;
+use function strpos;
+use function substr;
 
 /**
  * @internal
@@ -45,6 +48,9 @@ final class Logging {
             kind: self::KIND,
             displayName: "main-log-message-kind",
             desc: new LogMessageObjectDesc($queue),
+            metadata: [
+                new Metadata\HideName,
+            ],
         ));
 
         $registry->registerField(new FieldDef(
@@ -53,9 +59,25 @@ final class Logging {
             path: "time",
             displayName: "main-log-message-time",
             type: new IntFieldType,
-            metadata: [],
+            metadata: [
+                new Metadata\HideFieldByDefault,
+            ],
             desc: new ImmutableFieldDesc(
                 getter: fn(LogMessage $message) => GeneratorUtil::empty((int) ($message->microtime * 1e6)),
+            ),
+        ));
+
+        $registry->registerField(new FieldDef(
+            objectGroup: Group::ID,
+            objectKind: self::KIND,
+            path: "verbosity",
+            displayName: "main-log-message-verbosity",
+            type: new StringFieldType,
+            metadata: [
+                new Metadata\FieldDisplayPriority(5),
+            ],
+            desc: new ImmutableFieldDesc(
+                getter: fn(LogMessage $message) => GeneratorUtil::empty($message->level),
             ),
         ));
 
@@ -65,7 +87,9 @@ final class Logging {
             path: "message.raw",
             displayName: "main-log-message-message-raw",
             type: new StringFieldType,
-            metadata: [],
+            metadata: [
+                new Metadata\HideFieldByDefault,
+            ],
             desc: new ImmutableFieldDesc(
                 getter: fn(LogMessage $message) => GeneratorUtil::empty($message->message),
             ),
@@ -79,7 +103,17 @@ final class Logging {
             type: new StringFieldType,
             metadata: [],
             desc: new ImmutableFieldDesc(
-                getter: fn(LogMessage $message) => GeneratorUtil::empty(TextFormat::clean($message->message)),
+                getter: function(LogMessage $message) {
+                    false && yield;
+                    $text = TextFormat::clean($message->message);
+                    // strip prefix. legacy issue...
+                    $split = strpos($text, "]: ");
+                    if ($split !== false) {
+                        $text = substr($text, $split + 3);
+                    }
+
+                    return $text;
+                },
             ),
         ));
     }

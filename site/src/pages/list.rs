@@ -5,7 +5,7 @@ use yew::prelude::*;
 
 use crate::api;
 use crate::i18n::I18n;
-use crate::util::Grc;
+use crate::util::{Grc, RcStr};
 
 mod field_selector;
 mod object_list;
@@ -33,9 +33,6 @@ pub fn Comp(props: &Props) -> Html {
         (props.group.clone(), props.kind.clone()),
     );
 
-    let hidden_state = use_state(HashSet::new);
-    let hidden = &*hidden_state;
-
     let Some(def) =
         props
             .discovery
@@ -45,6 +42,33 @@ pub fn Comp(props: &Props) -> Html {
         else {
             return defy! { +"no such type"; }
         };
+
+    #[derive(Clone, Default)]
+    struct HiddenState {
+        hidden: HashSet<RcStr>,
+        dep:    Option<api::Desc>,
+    }
+
+    impl HiddenState {
+        fn of(def: &api::Desc) -> Self {
+            let mut hidden = HashSet::new();
+            for field in &def.fields {
+                if field.metadata.hide_by_default {
+                    hidden.insert(field.path.clone());
+                }
+            }
+
+            Self { hidden, dep: Some(def.clone()) }
+        }
+    }
+
+    let hidden_state = use_state(HiddenState::default);
+
+    if hidden_state.dep.as_ref() != Some(def) {
+        hidden_state.set(HiddenState::of(def));
+    }
+
+    let hidden = &*hidden_state;
 
     defy! {
         h1(class = "title") {
@@ -56,17 +80,17 @@ pub fn Comp(props: &Props) -> Html {
                 field_selector::FieldSelector(
                     i18n = props.i18n.clone(),
                     def = def.clone(),
-                    hidden = hidden.clone(),
+                    hidden = hidden.hidden.clone(),
                     set_visible_callback = Callback::from({
                         let hidden_state = hidden_state.clone();
 
                         move |(field_path, visible)| {
-                            let mut hidden: HashSet<_> = (&*hidden_state).clone();
+                            let mut hidden: HiddenState = (&*hidden_state).clone();
 
                             if visible {
-                                hidden.remove(&field_path);
+                                hidden.hidden.remove(&field_path);
                             } else {
-                                hidden.insert(field_path);
+                                hidden.hidden.insert(field_path);
                             }
 
                             hidden_state.set(hidden);
@@ -83,7 +107,7 @@ pub fn Comp(props: &Props) -> Html {
                         group = props.group.clone(),
                         kind = props.kind.clone(),
                         def = def.clone(),
-                        hidden = hidden.clone(),
+                        hidden = hidden.hidden.clone(),
                     );
                 }
             }

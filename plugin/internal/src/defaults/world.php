@@ -37,6 +37,7 @@ final class Worlds {
             kind: self::KIND,
             displayName: "main-world-kind",
             desc: new WorldObjectDesc($plugin),
+            metadata: [],
         ));
 
         $registry->registerField(new FieldDef(

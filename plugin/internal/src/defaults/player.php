@@ -38,6 +38,7 @@ final class Players {
             kind: self::KIND,
             displayName: "main-player-kind",
             desc: new PlayerObjectDesc($plugin),
+            metadata: [],
         ));
 
         $registry->registerField(new FieldDef(

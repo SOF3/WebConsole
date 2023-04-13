@@ -15,7 +15,7 @@ use function sprintf;
 final class FieldDef {
     /**
      * @param FieldType<V> $type
-     * @param array<string, string> $metadata
+     * @param FieldMetadata[] $metadata
      * @param FieldDesc<I, V> $desc
      */
     public function __construct(
@@ -32,6 +32,24 @@ final class FieldDef {
     public function objectId() : string {
         return sprintf("%s/%s", $this->objectGroup, $this->objectKind);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getMetadata() : array {
+        $metadata = [];
+        foreach ($this->metadata as $datum) {
+            $datum->apply($metadata);
+        }
+        return $metadata;
+    }
+}
+
+interface FieldMetadata {
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function apply(array &$metadata) : void;
 }
 
 /**

@@ -1,3 +1,4 @@
+use std::cmp;
 use std::collections::{BTreeMap, HashSet};
 
 use anyhow::Context as _;
@@ -111,13 +112,15 @@ impl Component for ObjectList {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let hidden = &ctx.props().hidden;
-        let fields: Vec<_> = ctx
+        let mut fields: Vec<_> = ctx
             .props()
             .def
             .fields
             .values()
             .filter(|&field| !hidden.contains(&field.path))
             .collect();
+        fields.sort_by_key(|field| (cmp::Reverse(field.metadata.display_priority), &field.path));
+
         let i18n = &ctx.props().i18n;
 
         defy! {
@@ -139,9 +142,11 @@ impl Component for ObjectList {
             div {
                 for object in self.objects.values() {
                     div(class = "card object-thumbnail") {
-                        header(class = "card-header") {
-                            p(class = "card-header-title") {
-                                + &object.name;
+                        if !ctx.props().def.metadata.hide_name {
+                            header(class = "card-header") {
+                                p(class = "card-header-title") {
+                                    + &object.name;
+                                }
                             }
                         }
 

@@ -195,7 +195,7 @@ final class Handler {
                 $fields[] = [
                     "path" => $field->path,
                     "display_name" => $field->displayName,
-                    "metadata" => $field->metadata,
+                    "metadata" => $field->getMetadata(),
                     "type" => $field->type->serializeType(),
                 ];
             }
@@ -203,6 +203,7 @@ final class Handler {
             $output["apis"][] = [
                 "kind" => $kind->kind,
                 "display_name" => $kind->displayName,
+                "metadata" => $kind->getMetadata(),
                 "group" => $kind->group,
                 "fields" => $fields,
             ];

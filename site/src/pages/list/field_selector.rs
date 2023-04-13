@@ -1,3 +1,4 @@
+use std::cmp;
 use std::collections::HashSet;
 
 use defy::defy;
@@ -44,20 +45,28 @@ pub fn FieldSelector(props: &FieldSelectorProps) -> Html {
                 );
             }
 
-            for field in props.def.fields.values() {
-                let display_name = props.i18n.disp(&field.display_name);
-                if filter_pattern.is_empty() || display_name.contains(filter_pattern) || field.path.contains(filter_pattern) {
-                    panel_block::PanelBlock(
-                        text = display_name,
-                        checked = !props.hidden.contains(&field.path),
-                        callback = Callback::from({
-                            let field_path = field.path.clone();
-                            let set_visible_callback = set_visible_callback.clone();
-                            move |checked: bool| {
-                                set_visible_callback.emit((field_path.clone(), checked));
-                            }
-                        }),
-                    );
+            if true {
+                let fields = {
+                    let mut fields: Vec<_> = props.def.fields.values().collect();
+                    fields.sort_by_key(|field| (cmp::Reverse(field.metadata.display_priority), &field.path));
+                    fields.into_iter()
+                };
+
+                for field in fields {
+                    let display_name = props.i18n.disp(&field.display_name);
+                    if filter_pattern.is_empty() || display_name.contains(filter_pattern) || field.path.contains(filter_pattern) {
+                        panel_block::PanelBlock(
+                            text = display_name,
+                            checked = !props.hidden.contains(&field.path),
+                            callback = Callback::from({
+                                let field_path = field.path.clone();
+                                let set_visible_callback = set_visible_callback.clone();
+                                move |checked: bool| {
+                                    set_visible_callback.emit((field_path.clone(), checked));
+                                }
+                            }),
+                        );
+                    }
                 }
             }
         }
