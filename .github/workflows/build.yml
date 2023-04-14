@@ -20,6 +20,10 @@ jobs:
       - uses: actions/upload-pages-artifact@v1
         with:
           path: site/dist
+      - uses: actions/upload-artifact@v3
+        with:
+          name: poggit-raw
+          path: local/WebConsole
   deploy:
     needs: build
     permissions:
@@ -33,11 +37,39 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v1
+  stage-poggit:
+    name: Stage Poggit source branch
+    runs-on: ubuntu-20.04
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - run: git checkout poggit/${{github.ref_name}} || git checkout --orphan poggit/${{github.ref_name}}
+      - run: git clean -dxff && git rm -fr .
+      - run: |
+          echo <<EOF >.poggit.yml
+          projects:
+            WebConsole:
+              type: plugin
+              compressBuilds: false
+              fullGzip: false
+          EOF
+      - uses: actions/download-artifact@v3
+        with:
+          name: poggit-raw
+          path: .
+      - run: |
+          git add -A
+          git \
+            -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -am "${{github.event.head_commit.message}} (${{github.sha}})"
+          git push origin poggit/${{github.ref_name}}
+
   stage-composer:
     name: Stage Composer dist branch
     runs-on: ubuntu-20.04
-    permissions:
-      contents: write
     strategy:
       matrix:
         module: [api, lib]
