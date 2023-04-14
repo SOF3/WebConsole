@@ -53,7 +53,7 @@ jobs:
           git checkout poggit/${{github.ref_name}} || git checkout --orphan poggit/${{github.ref_name}}
           git clean -dxff && git rm -fr .
       - run: |
-          echo <<EOF >.poggit.yml
+          cat <<EOF >.poggit.yml
           projects:
             WebConsole:
               type: plugin
