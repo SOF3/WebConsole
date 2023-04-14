@@ -58,9 +58,9 @@ final class Logging {
             objectKind: self::KIND,
             path: "time",
             displayName: "main-log-message-time",
-            type: new IntFieldType,
+            type: new IntFieldType(isTimestamp: true),
             metadata: [
-                new Metadata\HideFieldByDefault,
+                new Metadata\FieldDisplayPriority(10),
             ],
             desc: new ImmutableFieldDesc(
                 getter: fn(LogMessage $message) => GeneratorUtil::empty((int) ($message->microtime * 1e6)),

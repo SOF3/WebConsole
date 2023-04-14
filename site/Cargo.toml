@@ -6,11 +6,12 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.69"
 console_error_panic_hook = "0.1.7"
-defy = { version = "0.1.4" }
+defy = { version = "0.1.5" }
 fluent = "0.16.0"
 futures = "0.3.26"
 gloo = { version = "0.8.0", features = ["futures"] }
 indexmap = "1.9.2"
+js-sys = "0.3.61"
 log = "0.4.17"
 pin-project = "1.0.12"
 serde = { version = "1.0.152", features = ["derive", "rc"] }

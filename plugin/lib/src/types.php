@@ -34,10 +34,25 @@ final class StringFieldType implements FieldType {
  * @implements FieldType<int>
  */
 final class IntFieldType implements FieldType {
+    public function __construct(
+        public bool $isTimestamp = false,
+        public ?int $min = null,
+        public ?int $max = null,
+    ) {
+    }
+
     public function serializeType() : array {
-        return [
-            "type" => "int64",
-        ];
+        $ret = ["type" => "int64"];
+        if ($this->isTimestamp) {
+            $ret["is_timestamp"] = true;
+        }
+        if ($this->min !== null) {
+            $ret["min"] = $this->min;
+        }
+        if ($this->max !== null) {
+            $ret["max"] = $this->max;
+        }
+        return $ret;
     }
 
     public function serializeValue($value) : mixed {
@@ -49,10 +64,25 @@ final class IntFieldType implements FieldType {
  * @implements FieldType<float>
  */
 final class FloatFieldType implements FieldType {
+    public function __construct(
+        public bool $isTimestamp = false,
+        public ?float $min = null,
+        public ?float $max = null,
+    ) {
+    }
+
     public function serializeType() : array {
-        return [
-            "type" => "float64",
-        ];
+        $ret = ["type" => "float64"];
+        if ($this->isTimestamp) {
+            $ret["is_timestamp"] = true;
+        }
+        if ($this->min !== null) {
+            $ret["min"] = $this->min;
+        }
+        if ($this->max !== null) {
+            $ret["max"] = $this->max;
+        }
+        return $ret;
     }
 
     public function serializeValue($value) : mixed {

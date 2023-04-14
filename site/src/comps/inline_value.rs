@@ -16,13 +16,25 @@ pub fn InlineDisplay(props: &Props) -> Html {
                     _ => { + "invalid value"; }
                 }
             }
-            api::FieldType::Int64{} | api::FieldType::Float64 {} => {
+            api::FieldType::Int64{ is_timestamp, .. } | api::FieldType::Float64 { is_timestamp, .. } => {
                 match &props.value {
                     serde_json::Value::Number(number) => {
-                        + number.as_f64().map(|v| round(v).to_string())
-                            .or_else(|| number.as_u64().map(|v| format!("{v:.1}")))
-                            .or_else(|| number.as_i64().map(|v| format!("{v:.1}")))
-                            .unwrap_or_else(|| number.to_string());
+                        if *is_timestamp {
+                            match number.as_f64() {
+                                Some(number) => {
+                                    let date = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(number / 1000.0));
+                                    +format!("{:0>2}:{:0>2}:{:0>2}", date.get_hours(), date.get_minutes(), date.get_seconds());
+                                }
+                                None => {
+                                    +"invalid timestamp";
+                                }
+                            }
+                        } else {
+                            + number.as_f64().map(|v| round(v).to_string())
+                                .or_else(|| number.as_u64().map(|v| format!("{v:.1}")))
+                                .or_else(|| number.as_i64().map(|v| format!("{v:.1}")))
+                                .unwrap_or_else(|| number.to_string());
+                        }
                     }
                     _ => { + "invalid value"; }
                 }

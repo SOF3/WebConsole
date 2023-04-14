@@ -165,13 +165,13 @@ impl Client {
     }
 }
 
-#[derive(Deserialize, PartialEq, Eq)]
+#[derive(Deserialize, PartialEq)]
 pub struct Discovery {
     pub groups: IdMap<RcStr, Group>,
     pub apis:   IdMap<GroupKind, Desc>,
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Clone, PartialEq)]
 pub struct Desc {
     #[serde(flatten)]
     pub id:           GroupKind,
@@ -184,14 +184,14 @@ impl HasId<GroupKind> for Desc {
     fn id(&self) -> GroupKind { self.id.clone() }
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq, Default)]
+#[derive(Deserialize, Clone, PartialEq, Default)]
 pub struct KnownObjectMetadata {
     #[serde(rename = "webconsole/site/hide-name")]
     #[serde(default)]
     pub hide_name: bool,
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Clone, PartialEq)]
 pub struct FieldDef {
     pub path:         RcStr,
     pub display_name: i18n::Key,
@@ -204,7 +204,7 @@ impl HasId<RcStr> for FieldDef {
     fn id(&self) -> RcStr { self.path.clone() }
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq, Default)]
+#[derive(Deserialize, Clone, PartialEq, Default)]
 pub struct KnownFieldMetadata {
     #[serde(rename = "webconsole/site/display-priority")]
     #[serde(default)]
@@ -214,12 +214,26 @@ pub struct KnownFieldMetadata {
     pub hide_by_default:  bool,
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Clone, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum FieldType {
     String {},
-    Int64 {},
-    Float64 {},
+    Int64 {
+        #[serde(default)]
+        is_timestamp: bool,
+        #[serde(default)]
+        min:          Option<i64>,
+        #[serde(default)]
+        max:          Option<i64>,
+    },
+    Float64 {
+        #[serde(default)]
+        is_timestamp: bool,
+        #[serde(default)]
+        min:          Option<f64>,
+        #[serde(default)]
+        max:          Option<f64>,
+    },
     Bool {},
     Enum {
         options: IdMap<RcStr, EnumOption>,
@@ -239,7 +253,7 @@ pub enum FieldType {
     },
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Clone, PartialEq)]
 pub struct CompoundSubfield {
     key:  RcStr,
     name: i18n::Key,
@@ -251,7 +265,7 @@ impl HasId<RcStr> for CompoundSubfield {
     fn id(&self) -> RcStr { self.key.clone() }
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Clone, PartialEq)]
 pub struct EnumOption {
     pub id:   RcStr,
     pub i18n: i18n::Key,
@@ -261,7 +275,7 @@ impl HasId<RcStr> for EnumOption {
     fn id(&self) -> RcStr { self.id.clone() }
 }
 
-#[derive(Deserialize, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Clone, PartialEq)]
 pub struct Group {
     pub id:               RcStr,
     pub display_name:     i18n::Key,

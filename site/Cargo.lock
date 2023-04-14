@@ -59,9 +59,9 @@ dependencies = [
 
 [[package]]
 name = "defy"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2958804256f6488225f3467834f9929fab266b16e2bbdebcc8d82a9652659433"
+checksum = "67b4f2932dea449e368de6798a9d4dade4a9accda3f903333b89e9831d3dbb26"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -718,6 +718,7 @@ dependencies = [
  "futures",
  "gloo",
  "indexmap",
+ "js-sys",
  "log",
  "pin-project",
  "serde",
