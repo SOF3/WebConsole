@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SOFe\WebConsole\Api;
 
 use Generator;
-use libs\_7269ed5620bba647\SOFe\AwaitGenerator\Traverser;
+use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\Traverser;
 use function sprintf;
 
 final class GroupDef {

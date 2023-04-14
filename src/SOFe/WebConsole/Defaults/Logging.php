@@ -8,10 +8,10 @@ use Generator;
 use pocketmine\plugin\Plugin;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
-use libs\_7269ed5620bba647\SOFe\AwaitGenerator\Await;
-use libs\_7269ed5620bba647\SOFe\AwaitGenerator\GeneratorUtil;
-use libs\_7269ed5620bba647\SOFe\AwaitGenerator\PubSub;
-use libs\_7269ed5620bba647\SOFe\AwaitGenerator\Traverser;
+use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\Await;
+use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\GeneratorUtil;
+use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\PubSub;
+use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\Api\AddObjectEvent;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
@@ -19,11 +19,11 @@ use SOFe\WebConsole\Api\ObjectDesc;
 use SOFe\WebConsole\Api\Registry;
 use SOFe\WebConsole\Api\RemoveObjectEvent;
 use SOFe\WebConsole\Internal\Main;
-use libs\_7269ed5620bba647\SOFe\WebConsole\Lib\ImmutableFieldDesc;
-use libs\_7269ed5620bba647\SOFe\WebConsole\Lib\IntFieldType;
-use libs\_7269ed5620bba647\SOFe\WebConsole\Lib\Metadata;
-use libs\_7269ed5620bba647\SOFe\WebConsole\Lib\StringFieldType;
-use libs\_7269ed5620bba647\SOFe\WebConsole\Lib\Util;
+use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\ImmutableFieldDesc;
+use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\IntFieldType;
+use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\Metadata;
+use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\StringFieldType;
+use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\Util;
 use Threaded;
 use ThreadedLoggerAttachment;
 use function array_shift;
@@ -58,9 +58,9 @@ final class Logging {
             objectKind: self::KIND,
             path: "time",
             displayName: "main-log-message-time",
-            type: new IntFieldType,
+            type: new IntFieldType(isTimestamp: true),
             metadata: [
-                new Metadata\HideFieldByDefault,
+                new Metadata\FieldDisplayPriority(10),
             ],
             desc: new ImmutableFieldDesc(
                 getter: fn(LogMessage $message) => GeneratorUtil::empty((int) ($message->microtime * 1e6)),
