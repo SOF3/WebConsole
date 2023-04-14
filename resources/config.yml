@@ -1,0 +1,13 @@
+# The binding address for the API server.
+# Do NOT expose the API server to the public network directly;
+# always serve behind a secure reverse proxy.
+api-server-address: "127.0.0.1"
+
+# The listening port for the API server.
+api-server-port: 14875
+
+# Timeout in seconds to wait for HTTP client data.
+client-timeout: 10
+
+# Maximum number of bytes for each HTTP request.
+max-request-size: 1048576
