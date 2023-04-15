@@ -8,10 +8,10 @@ use Generator;
 use pocketmine\plugin\Plugin;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
-use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\Await;
-use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\GeneratorUtil;
-use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\PubSub;
-use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\Traverser;
+use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\Await;
+use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\GeneratorUtil;
+use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\PubSub;
+use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\Api\AddObjectEvent;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
@@ -19,11 +19,11 @@ use SOFe\WebConsole\Api\ObjectDesc;
 use SOFe\WebConsole\Api\Registry;
 use SOFe\WebConsole\Api\RemoveObjectEvent;
 use SOFe\WebConsole\Internal\Main;
-use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\ImmutableFieldDesc;
-use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\IntFieldType;
-use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\Metadata;
-use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\StringFieldType;
-use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\Util;
+use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\ImmutableFieldDesc;
+use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\IntFieldType;
+use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\Metadata;
+use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\StringFieldType;
+use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\Util;
 use Threaded;
 use ThreadedLoggerAttachment;
 use function array_shift;
@@ -50,6 +50,7 @@ final class Logging {
             desc: new LogMessageObjectDesc($queue),
             metadata: [
                 new Metadata\HideName,
+                Metadata\DefaultDisplayMode::table(),
             ],
         ));
 

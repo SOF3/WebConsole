@@ -11,9 +11,9 @@ use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\player\Player;
-use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\Channel;
-use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\GeneratorUtil;
-use libs\_734bfd15e9991e6b\SOFe\AwaitGenerator\Traverser;
+use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\Channel;
+use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\GeneratorUtil;
+use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\Api\AddObjectEvent;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
@@ -21,9 +21,9 @@ use SOFe\WebConsole\Api\ObjectDesc;
 use SOFe\WebConsole\Api\Registry;
 use SOFe\WebConsole\Api\RemoveObjectEvent;
 use SOFe\WebConsole\Internal\Main;
-use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\EventBasedFieldDesc;
-use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\FloatFieldType;
-use libs\_734bfd15e9991e6b\SOFe\WebConsole\Lib\Util;
+use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\EventBasedFieldDesc;
+use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\FloatFieldType;
+use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\Util;
 
 
 
