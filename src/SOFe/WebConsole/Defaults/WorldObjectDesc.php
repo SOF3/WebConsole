@@ -8,9 +8,9 @@ use Generator;
 use pocketmine\event\world\WorldLoadEvent;
 use pocketmine\event\world\WorldUnloadEvent;
 use pocketmine\world\World;
-use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\Channel;
-use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\GeneratorUtil;
-use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\Traverser;
+use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Channel;
+use libs\_02eb9eb924190945\SOFe\AwaitGenerator\GeneratorUtil;
+use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\Api\AddObjectEvent;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
@@ -18,11 +18,11 @@ use SOFe\WebConsole\Api\ObjectDesc;
 use SOFe\WebConsole\Api\Registry;
 use SOFe\WebConsole\Api\RemoveObjectEvent;
 use SOFe\WebConsole\Internal\Main;
-use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\ImmutableFieldDesc;
-use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\IntFieldType;
-use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\PollingFieldDesc;
-use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\StringFieldType;
-use libs\_2dc28281abd90c48\SOFe\WebConsole\Lib\Util;
+use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\ImmutableFieldDesc;
+use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\IntFieldType;
+use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\PollingFieldDesc;
+use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\StringFieldType;
+use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\Util;
 
 
 

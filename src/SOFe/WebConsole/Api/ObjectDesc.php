@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SOFe\WebConsole\Api;
 
 use Generator;
-use libs\_2dc28281abd90c48\SOFe\AwaitGenerator\Traverser;
+use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Traverser;
 use function sprintf;
 
 
