@@ -8,6 +8,7 @@ use futures::StreamExt;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
+use super::DisplayMode;
 use crate::i18n::I18n;
 use crate::util::{self, Grc, RcStr};
 use crate::{api, comps};
@@ -139,32 +140,72 @@ impl Component for ObjectList {
                 }
             }
 
-            div {
-                for object in self.objects.values() {
-                    div(class = "card object-thumbnail") {
-                        if !ctx.props().def.metadata.hide_name {
-                            header(class = "card-header") {
-                                p(class = "card-header-title") {
-                                    + &object.name;
+            match ctx.props().display_mode {
+                DisplayMode::Cards => {
+                    div {
+                        for object in self.objects.values() {
+                            div(class = "card object-thumbnail") {
+                                if !ctx.props().def.metadata.hide_name {
+                                    header(class = "card-header") {
+                                        p(class = "card-header-title") {
+                                            + &object.name;
+                                        }
+                                    }
+                                }
+
+                                if !fields.is_empty() {
+                                    div(class = "card-content") {
+                                        div(class = "content") {
+                                            for &field in &fields {
+                                                if let Some(value) = util::get_json_path(&object.fields, &field.path) {
+                                                    span(class = "tag") {
+                                                        + i18n.disp(&field.display_name);
+                                                    }
+
+                                                    comps::InlineDisplay(
+                                                        i18n = i18n.clone(),
+                                                        value = value.clone(),
+                                                        ty = field.ty.clone(),
+                                                    );
+                                                    + " ";
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
+                    }
+                }
+                DisplayMode::Table => {
+                    table(class = "table") {
+                        thead {
+                            tr {
+                                for field in &fields {
+                                    th {
+                                        + i18n.disp(&field.display_name);
+                                    }
+                                }
+                            }
+                        }
+                        tbody {
+                            for object in self.objects.values() {
+                                tr {
+                                    if !ctx.props().def.metadata.hide_name {
+                                        th(class = "card-header-title") {
+                                            + &object.name;
+                                        }
+                                    }
+                                }
 
-                        if !fields.is_empty() {
-                            div(class = "card-content") {
-                                div(class = "content") {
-                                    for &field in &fields {
+                                for field in &fields {
+                                    td {
                                         if let Some(value) = util::get_json_path(&object.fields, &field.path) {
-                                            span(class = "tag") {
-                                                + i18n.disp(&field.display_name);
-                                            }
-
                                             comps::InlineDisplay(
                                                 i18n = i18n.clone(),
                                                 value = value.clone(),
                                                 ty = field.ty.clone(),
                                             );
-                                            + " ";
                                         }
                                     }
                                 }
@@ -183,10 +224,11 @@ pub enum ObjectListMsg {
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct ObjectListProps {
-    pub api:    Grc<api::Client>,
-    pub i18n:   I18n,
-    pub group:  AttrValue,
-    pub kind:   AttrValue,
-    pub def:    api::Desc,
-    pub hidden: HashSet<RcStr>,
+    pub api:          Grc<api::Client>,
+    pub i18n:         I18n,
+    pub group:        AttrValue,
+    pub kind:         AttrValue,
+    pub def:          api::Desc,
+    pub hidden:       HashSet<RcStr>,
+    pub display_mode: DisplayMode,
 }

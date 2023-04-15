@@ -18,6 +18,7 @@ use serde::Deserialize;
 use yew::hook;
 
 use crate::i18n::{self, I18n};
+use crate::pages::list as list_page;
 use crate::util::{Grc, HasId, IdMap, RcStr, StreamWith};
 
 #[derive(Deserialize)]
@@ -189,6 +190,10 @@ pub struct KnownObjectMetadata {
     #[serde(rename = "webconsole/site/hide-name")]
     #[serde(default)]
     pub hide_name: bool,
+
+    #[serde(rename = "webconsole/site/default-display-mode")]
+    #[serde(default)]
+    pub default_display_mode: list_page::DisplayMode,
 }
 
 #[derive(Deserialize, Clone, PartialEq)]

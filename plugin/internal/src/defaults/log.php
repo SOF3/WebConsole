@@ -50,6 +50,7 @@ final class Logging {
             desc: new LogMessageObjectDesc($queue),
             metadata: [
                 new Metadata\HideName,
+                Metadata\DefaultDisplayMode::table(),
             ],
         ));
 

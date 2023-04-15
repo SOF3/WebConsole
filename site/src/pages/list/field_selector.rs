@@ -1,11 +1,11 @@
 use std::cmp;
-use std::collections::HashSet;
 
 use defy::defy;
 use yew::prelude::*;
 
-use super::panel_block;
+use super::{panel_block, DisplayMode, DisplayState};
 use crate::api;
+use crate::comps::SelectButtonGroup;
 use crate::i18n::I18n;
 use crate::util::RcStr;
 
@@ -27,6 +27,12 @@ pub fn FieldSelector(props: &FieldSelectorProps) -> Html {
     };
 
     defy! {
+        SelectButtonGroup<DisplayMode>(
+            i18n = props.i18n.clone(),
+            value = props.display.mode,
+            callback = props.set_display_mode_callback.clone(),
+        );
+
         nav(class = "panel") {
             p(class = "panel-heading") {
                 + props.i18n.disp("base-properties-title");
@@ -57,7 +63,7 @@ pub fn FieldSelector(props: &FieldSelectorProps) -> Html {
                     if filter_pattern.is_empty() || display_name.contains(filter_pattern) || field.path.contains(filter_pattern) {
                         panel_block::PanelBlock(
                             text = display_name,
-                            checked = !props.hidden.contains(&field.path),
+                            checked = !props.display.hidden.contains(&field.path),
                             callback = Callback::from({
                                 let field_path = field.path.clone();
                                 let set_visible_callback = set_visible_callback.clone();
@@ -75,8 +81,9 @@ pub fn FieldSelector(props: &FieldSelectorProps) -> Html {
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct FieldSelectorProps {
-    pub i18n:                 I18n,
-    pub def:                  api::Desc,
-    pub hidden:               HashSet<RcStr>,
-    pub set_visible_callback: Callback<(RcStr, bool)>,
+    pub i18n:                      I18n,
+    pub def:                       api::Desc,
+    pub display:                   DisplayState,
+    pub set_display_mode_callback: Callback<DisplayMode>,
+    pub set_visible_callback:      Callback<(RcStr, bool)>,
 }

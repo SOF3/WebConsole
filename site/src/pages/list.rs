@@ -1,9 +1,11 @@
 use std::collections::HashSet;
 
 use defy::defy;
+use serde::Deserialize;
 use yew::prelude::*;
 
 use crate::api;
+use crate::comps::SelectButtons;
 use crate::i18n::I18n;
 use crate::util::{Grc, RcStr};
 
@@ -43,32 +45,13 @@ pub fn Comp(props: &Props) -> Html {
             return defy! { +"no such type"; }
         };
 
-    #[derive(Clone, Default)]
-    struct HiddenState {
-        hidden: HashSet<RcStr>,
-        dep:    Option<api::Desc>,
+    let display_state = use_state(DisplayState::default);
+
+    if display_state.dep.as_ref() != Some(def) {
+        display_state.set(DisplayState::of(def));
     }
 
-    impl HiddenState {
-        fn of(def: &api::Desc) -> Self {
-            let mut hidden = HashSet::new();
-            for field in &def.fields {
-                if field.metadata.hide_by_default {
-                    hidden.insert(field.path.clone());
-                }
-            }
-
-            Self { hidden, dep: Some(def.clone()) }
-        }
-    }
-
-    let hidden_state = use_state(HiddenState::default);
-
-    if hidden_state.dep.as_ref() != Some(def) {
-        hidden_state.set(HiddenState::of(def));
-    }
-
-    let hidden = &*hidden_state;
+    let display = &*display_state;
 
     defy! {
         h1(class = "title") {
@@ -80,22 +63,30 @@ pub fn Comp(props: &Props) -> Html {
                 field_selector::FieldSelector(
                     i18n = props.i18n.clone(),
                     def = def.clone(),
-                    hidden = hidden.hidden.clone(),
+                    display = display.clone(),
+                    set_display_mode_callback = Callback::from({
+                        let display_state = display_state.clone();
+                        move |mode| {
+                            let mut display: DisplayState = (&*display_state).clone();
+                            display.mode = mode;
+                            display_state.set(display);
+                        }
+                    }),
                     set_visible_callback = Callback::from({
-                        let hidden_state = hidden_state.clone();
+                        let display_state = display_state.clone();
 
                         move |(field_path, visible)| {
-                            let mut hidden: HiddenState = (&*hidden_state).clone();
+                            let mut display: DisplayState = (&*display_state).clone();
 
                             if visible {
-                                hidden.hidden.remove(&field_path);
+                                display.hidden.remove(&field_path);
                             } else {
-                                hidden.hidden.insert(field_path);
+                                display.hidden.insert(field_path);
                             }
 
-                            hidden_state.set(hidden);
+                            display_state.set(display);
                         }
-                    })
+                    }),
                 );
             }
 
@@ -107,7 +98,8 @@ pub fn Comp(props: &Props) -> Html {
                         group = props.group.clone(),
                         kind = props.kind.clone(),
                         def = def.clone(),
-                        hidden = hidden.hidden.clone(),
+                        hidden = display.hidden.clone(),
+                        display_mode = display.mode,
                     );
                 }
             }
@@ -127,5 +119,51 @@ pub struct Props {
 fn fallback() -> Html {
     defy! {
         + "Loading";
+    }
+}
+
+#[derive(Clone, Default, PartialEq)]
+pub struct DisplayState {
+    pub mode:   DisplayMode,
+    pub hidden: HashSet<RcStr>,
+    pub dep:    Option<api::Desc>,
+}
+
+impl DisplayState {
+    fn of(def: &api::Desc) -> Self {
+        let mut hidden = HashSet::new();
+        for field in &def.fields {
+            if field.metadata.hide_by_default {
+                hidden.insert(field.path.clone());
+            }
+        }
+
+        Self { mode: def.metadata.default_display_mode, hidden, dep: Some(def.clone()) }
+    }
+}
+
+#[derive(Clone, Copy, Default, PartialEq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum DisplayMode {
+    #[default]
+    Cards,
+    Table,
+}
+
+impl SelectButtons for DisplayMode {
+    fn variants() -> &'static [Self] { &[Self::Cards, Self::Table] }
+
+    fn icon(&self) -> &'static str {
+        match self {
+            Self::Cards => "mdi-view-comfy",
+            Self::Table => "mdi-table",
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        match self {
+            Self::Cards => "base-display-card",
+            Self::Table => "base-display-table",
+        }
     }
 }
