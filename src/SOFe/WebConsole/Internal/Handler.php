@@ -7,11 +7,11 @@ namespace SOFe\WebConsole\Internal;
 use Closure;
 use Generator;
 use RuntimeException;
-use libs\_85f6d346dd7f97fb\SOFe\AwaitGenerator\Await;
-use libs\_85f6d346dd7f97fb\SOFe\AwaitGenerator\Channel;
-use libs\_85f6d346dd7f97fb\SOFe\AwaitGenerator\Loading;
-use libs\_85f6d346dd7f97fb\SOFe\AwaitGenerator\PubSub;
-use libs\_85f6d346dd7f97fb\SOFe\AwaitGenerator\Traverser;
+use libs\_05d4a3a3240f542a\SOFe\AwaitGenerator\Await;
+use libs\_05d4a3a3240f542a\SOFe\AwaitGenerator\Channel;
+use libs\_05d4a3a3240f542a\SOFe\AwaitGenerator\Loading;
+use libs\_05d4a3a3240f542a\SOFe\AwaitGenerator\PubSub;
+use libs\_05d4a3a3240f542a\SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
@@ -181,6 +181,46 @@ final class Handler {
                 throw $e;
             }
         }
+    }
+
+    /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
+     * @param I $identity
+     * @param Closure(string): bool $fieldFilter
+     * @param Closure(FieldDef<I, mixed>): Generator<mixed, mixed, mixed, mixed> $fieldGetter
+     * @return Generator<mixed, mixed, mixed, array<string, mixed>>
+     */
+    public static function populateObjectFields(ObjectDef $objectDef, $identity, Closure $fieldFilter, Closure $fieldGetter) : Generator {
+        $item = [
+            "_name" => $objectDef->desc->name($identity),
+        ];
+
+        $futures = [];
+        foreach ($objectDef->fields as $field) {
+            if ($fieldFilter($field->path)) {
+                $futures[] = (function() use ($field, &$item, $fieldGetter) {
+                    $fieldParts = explode(".", $field->path);
+                    $rawValue = yield from $fieldGetter($field);
+                    $fieldValue = $field->type->serializeValue($rawValue);
+
+                    /** @var array<string, mixed> $ptr */
+                    $ptr = &$item;
+                    foreach ($fieldParts as $fieldPart) {
+                        if (!isset($ptr[$fieldPart])) {
+                            $ptr[$fieldPart] = [];
+                        }
+                        $ptr = &$ptr[$fieldPart];
+                    }
+                    $ptr = $fieldValue;
+                    unset($ptr);
+                })();
+            }
+        }
+
+        yield from Await::all($futures);
+
+        return $item;
     }
 
     private function discovery() : HttpResponse {
