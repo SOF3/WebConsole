@@ -351,6 +351,7 @@ pub struct Object {
 #[derive(Debug, Deserialize)]
 #[serde(tag = "event")]
 pub enum ObjectEvent {
+    Clear,
     Added { item: Object },
     Removed { name: RcStr },
     FieldUpdate { name: RcStr, field: RcStr, value: serde_json::Value },

@@ -81,6 +81,9 @@ impl Component for ObjectList {
         match msg {
             ObjectListMsg::Event(Ok(event)) => {
                 match event {
+                    api::ObjectEvent::Clear => {
+                        self.objects.clear();
+                    }
                     api::ObjectEvent::Added { item: object } => {
                         self.objects.insert(object.name.clone(), object);
                     }
@@ -181,10 +184,12 @@ impl Component for ObjectList {
                     table(class = "table") {
                         thead {
                             tr {
+                                if !ctx.props().def.metadata.hide_name {
+                                    th { + i18n.disp("base-name"); }
+                                }
+
                                 for field in &fields {
-                                    th {
-                                        + i18n.disp(&field.display_name);
-                                    }
+                                    th { + i18n.disp(&field.display_name); }
                                 }
                             }
                         }
@@ -192,20 +197,20 @@ impl Component for ObjectList {
                             for object in self.objects.values() {
                                 tr {
                                     if !ctx.props().def.metadata.hide_name {
-                                        th(class = "card-header-title") {
+                                        th {
                                             + &object.name;
                                         }
                                     }
-                                }
 
-                                for field in &fields {
-                                    td {
-                                        if let Some(value) = util::get_json_path(&object.fields, &field.path) {
-                                            comps::InlineDisplay(
-                                                i18n = i18n.clone(),
-                                                value = value.clone(),
-                                                ty = field.ty.clone(),
-                                            );
+                                    for field in &fields {
+                                        td {
+                                            if let Some(value) = util::get_json_path(&object.fields, &field.path) {
+                                                comps::InlineDisplay(
+                                                    i18n = i18n.clone(),
+                                                    value = value.clone(),
+                                                    ty = field.ty.clone(),
+                                                );
+                                            }
                                         }
                                     }
                                 }

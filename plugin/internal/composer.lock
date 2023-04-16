@@ -779,16 +779,16 @@
         },
         {
             "name": "pocketmine/pocketmine-mp",
-            "version": "4.18.4",
+            "version": "4.19.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/PocketMine-MP.git",
-                "reference": "f61f72180f2498648875ea7947e297b485fefccc"
+                "reference": "a534ac759ab1d13c50de8f5728ed28612a6dd019"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/PocketMine-MP/zipball/f61f72180f2498648875ea7947e297b485fefccc",
-                "reference": "f61f72180f2498648875ea7947e297b485fefccc",
+                "url": "https://api.github.com/repos/pmmp/PocketMine-MP/zipball/a534ac759ab1d13c50de8f5728ed28612a6dd019",
+                "reference": "a534ac759ab1d13c50de8f5728ed28612a6dd019",
                 "shasum": ""
             },
             "require": {
@@ -843,7 +843,7 @@
                 "webmozart/path-util": "^2.3"
             },
             "require-dev": {
-                "phpstan/phpstan": "1.10.11",
+                "phpstan/phpstan": "1.10.13",
                 "phpstan/phpstan-phpunit": "^1.1.0",
                 "phpstan/phpstan-strict-rules": "^1.2.0",
                 "phpunit/phpunit": "^9.2"
@@ -865,7 +865,7 @@
             "homepage": "https://pmmp.io",
             "support": {
                 "issues": "https://github.com/pmmp/PocketMine-MP/issues",
-                "source": "https://github.com/pmmp/PocketMine-MP/tree/4.18.4"
+                "source": "https://github.com/pmmp/PocketMine-MP/tree/4.19.2"
             },
             "funding": [
                 {
@@ -877,7 +877,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2023-04-10T13:17:53+00:00"
+            "time": "2023-04-14T17:43:41+00:00"
         },
         {
             "name": "pocketmine/raklib",
@@ -1098,12 +1098,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ramsey/uuid.git",
-                "reference": "8e955307d32dc9b6992440ff81321d3cb09db75a"
+                "reference": "60a4c63ab724854332900504274f6150ff26d286"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ramsey/uuid/zipball/8e955307d32dc9b6992440ff81321d3cb09db75a",
-                "reference": "8e955307d32dc9b6992440ff81321d3cb09db75a",
+                "url": "https://api.github.com/repos/ramsey/uuid/zipball/60a4c63ab724854332900504274f6150ff26d286",
+                "reference": "60a4c63ab724854332900504274f6150ff26d286",
                 "shasum": ""
             },
             "require": {
@@ -1171,7 +1171,7 @@
             ],
             "support": {
                 "issues": "https://github.com/ramsey/uuid/issues",
-                "source": "https://github.com/ramsey/uuid/tree/4.x"
+                "source": "https://github.com/ramsey/uuid/tree/4.7.4"
             },
             "funding": [
                 {
@@ -1183,7 +1183,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-03-27T22:05:11+00:00"
+            "time": "2023-04-15T23:01:58+00:00"
         },
         {
             "name": "sof3/await-generator",
@@ -1191,12 +1191,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/SOF3/await-generator.git",
-                "reference": "4638908ac1988563500f7e6936fa7cd40f35acf6"
+                "reference": "2c1c6bb3b644b1de8bc8674f272376b7d34af958"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SOF3/await-generator/zipball/4638908ac1988563500f7e6936fa7cd40f35acf6",
-                "reference": "4638908ac1988563500f7e6936fa7cd40f35acf6",
+                "url": "https://api.github.com/repos/SOF3/await-generator/zipball/2c1c6bb3b644b1de8bc8674f272376b7d34af958",
+                "reference": "2c1c6bb3b644b1de8bc8674f272376b7d34af958",
                 "shasum": ""
             },
             "require": {
@@ -1230,7 +1230,7 @@
                 "issues": "https://github.com/SOF3/await-generator/issues",
                 "source": "https://github.com/SOF3/await-generator/tree/pubsub-topic"
             },
-            "time": "2023-04-09T15:58:29+00:00"
+            "time": "2023-04-16T06:06:40+00:00"
         },
         {
             "name": "sof3/webconsole-api",
@@ -2512,16 +2512,16 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "1.10.x-dev",
+            "version": "1.11.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "8addebc2f228b5d9d33eee285452ed5b73fbd6f4"
+                "reference": "519d631b94dbbae0d9cc24935a5fcf56ddc9e21b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/8addebc2f228b5d9d33eee285452ed5b73fbd6f4",
-                "reference": "8addebc2f228b5d9d33eee285452ed5b73fbd6f4",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/519d631b94dbbae0d9cc24935a5fcf56ddc9e21b",
+                "reference": "519d631b94dbbae0d9cc24935a5fcf56ddc9e21b",
                 "shasum": ""
             },
             "require": {
@@ -2571,7 +2571,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-11T14:22:21+00:00"
+            "time": "2023-04-14T17:17:51+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -2898,12 +2898,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "5a0a0de422fc800268b8819f42994c5aad024628"
+                "reference": "c993f0d3b0489ffc42ee2fe0bd645af1538a63b2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/5a0a0de422fc800268b8819f42994c5aad024628",
-                "reference": "5a0a0de422fc800268b8819f42994c5aad024628",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/c993f0d3b0489ffc42ee2fe0bd645af1538a63b2",
+                "reference": "c993f0d3b0489ffc42ee2fe0bd645af1538a63b2",
                 "shasum": ""
             },
             "require": {
@@ -2977,7 +2977,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/9.6"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/9.6.7"
             },
             "funding": [
                 {
@@ -2993,7 +2993,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-11T13:00:21+00:00"
+            "time": "2023-04-14T08:58:40+00:00"
         },
         {
             "name": "psr/cache",
@@ -4223,12 +4223,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/console.git",
-                "reference": "22139f9c425d2be619ccbf1bdbabbd67d1060c50"
+                "reference": "4fabdd5541927ce0d3f593616a798148192281c3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/console/zipball/22139f9c425d2be619ccbf1bdbabbd67d1060c50",
-                "reference": "22139f9c425d2be619ccbf1bdbabbd67d1060c50",
+                "url": "https://api.github.com/repos/symfony/console/zipball/4fabdd5541927ce0d3f593616a798148192281c3",
+                "reference": "4fabdd5541927ce0d3f593616a798148192281c3",
                 "shasum": ""
             },
             "require": {
@@ -4311,7 +4311,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-04T06:17:48+00:00"
+            "time": "2023-04-14T16:25:38+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
