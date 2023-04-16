@@ -4,25 +4,19 @@ declare(strict_types=1);
 
 namespace SOFe\WebConsole\Defaults;
 
-use Generator;
 use pocketmine\event\world\WorldLoadEvent;
 use pocketmine\event\world\WorldUnloadEvent;
 use pocketmine\world\World;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Channel;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\GeneratorUtil;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Traverser;
-use SOFe\WebConsole\Api\AddObjectEvent;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
-use SOFe\WebConsole\Api\ObjectDesc;
 use SOFe\WebConsole\Api\Registry;
-use SOFe\WebConsole\Api\RemoveObjectEvent;
 use SOFe\WebConsole\Internal\Main;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\ImmutableFieldDesc;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\IntFieldType;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\PollingFieldDesc;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\StringFieldType;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\Util;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\EventBasedObjectDesc;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\ImmutableFieldDesc;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\IntFieldType;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\PollingFieldDesc;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\StringFieldType;
 
 
 /**
@@ -36,7 +30,17 @@ final class Worlds {
             group: Group::ID,
             kind: self::KIND,
             displayName: "main-world-kind",
-            desc: new WorldObjectDesc($plugin),
+            desc: new EventBasedObjectDesc(
+                plugin: $plugin,
+                name: fn(World $world) => $world->getFolderName(),
+                get: fn(string $name) => $plugin->getServer()->getWorldManager()->getWorldByName($name),
+                list: fn() => $plugin->getServer()->getWorldManager()->getWorlds(),
+                isValid: fn(World $world) => $world->isLoaded(),
+                addEvent: WorldLoadEvent::class,
+                resolveAddEvent: fn(WorldLoadEvent $event) => $event->getWorld(),
+                removeEvent: WorldUnloadEvent::class,
+                resolveRemoveEvent: fn(WorldUnloadEvent $event) => $event->getWorld(),
+            ),
             metadata: [],
         ));
 

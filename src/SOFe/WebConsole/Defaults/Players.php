@@ -4,26 +4,20 @@ declare(strict_types=1);
 
 namespace SOFe\WebConsole\Defaults;
 
-use Generator;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\EntityRegainHealthEvent;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\player\Player;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Channel;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\GeneratorUtil;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Traverser;
-use SOFe\WebConsole\Api\AddObjectEvent;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
-use SOFe\WebConsole\Api\ObjectDesc;
 use SOFe\WebConsole\Api\Registry;
-use SOFe\WebConsole\Api\RemoveObjectEvent;
 use SOFe\WebConsole\Internal\Main;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\EventBasedFieldDesc;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\FloatFieldType;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\Util;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\EventBasedFieldDesc;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\EventBasedObjectDesc;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\FloatFieldType;
 
 
 /**
@@ -37,7 +31,17 @@ final class Players {
             group: Group::ID,
             kind: self::KIND,
             displayName: "main-player-kind",
-            desc: new PlayerObjectDesc($plugin),
+            desc: new EventBasedObjectDesc(
+                plugin: $plugin,
+                name: fn(Player $player) => $player->getName(),
+                get: fn(string $name) => $plugin->getServer()->getPlayerExact($name),
+                list: fn() => $plugin->getServer()->getOnlinePlayers(),
+                isValid: fn(Player $player) => $player->isOnline(),
+                addEvent: PlayerLoginEvent::class,
+                resolveAddEvent: fn(PlayerLoginEvent $event) => $event->getPlayer(),
+                removeEvent: PlayerQuitEvent::class,
+                resolveRemoveEvent: fn(PlayerQuitEvent $event) => $event->getPlayer(),
+            ),
             metadata: [],
         ));
 

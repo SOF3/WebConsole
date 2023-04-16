@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace SOFe\WebConsole\Api;
 
+use Exception;
 use Generator;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Traverser;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\Traverser;
 use function sprintf;
 
 
@@ -73,32 +74,38 @@ interface ObjectDesc {
     public function name($object) : string;
 
     /**
-     * Lists all possible objects.
+     * Watches the addition of all objects.
+     * All existing objects should be treated as an addition.
      *
-     * The order of traversal does not need to be sorted,
-     * but it *should* try to be stable for better user experience.
+     * The traverser may be suspended for a long time during a value yield.
+     * Implementors should take care of potential timeout/invalidation when the control is returned.
+     * The value yield and suspension points may also interrupt the call with an `InterruptException`,
+     * in which case the implementation should close all backing handles, queries, etc.
      *
-     * The returned traverser may be interrupted with an InterruptException,
-     * in which case any backing queries should be terminated.
+     * The implementor may throw a `RestartAddWatch` to request re-listing all initial objects.
+     * In this case, the caller should clear all previous known objects and call `watchAdd` again.
      *
+     * @param bool $listOnly If true, the traverser should return after the initial list is complete.
+     *                       If false, the traverser should continue notifying for new additions.
+     * @param int|null $limit If non null, the caller is only interested in `$limit` objects at a time.
+     *                        Subsequent objects may still be fetched if some of the previous objects are removed.
+     *                        This is just an optimization hint.
      * @return Traverser<I>
      */
-    public function list() : Traverser;
+    public function watchAdd(bool $listOnly, ?int $limit) : Traverser;
 
     /**
-     * Watches the addition and removal of objects.
-     * It should initially yield all creation events first.
+     * Returns a future that resolves when the object is removed.
      *
-     * The traverser yields an ObjectEvent indicating the addition or removal of an event.
+     * The HTTP watch implementation invokes this method for every item yielded by `watchAdd`.
      *
-     * The returned traverser may be interrupted with an InterruptException,
-     * in which case any backing queries should be terminated.
+     * Suspension points may be interrupted,
+     * in which case the implementation should clean up all backing handles, queries, etc.
      *
-     * @param int|null $limit If non null, he caller only handles the first `$limit` AddObjectEvents,
-     *                        so sending extra AddObjectEvents is pointless.
-     * @return Traverser<AddObjectEvent<I>|RemoveObjectEvent<I>>
+     * @param I $object
+     * @return Generator<mixed, mixed, mixed, void>
      */
-    public function watch(?int $limit) : Traverser;
+    public function watchRemove($object) : Generator;
 
     /**
      * Fetches an object given its name.

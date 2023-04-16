@@ -4,33 +4,22 @@ declare(strict_types=1);
 
 namespace SOFe\WebConsole\Defaults;
 
-use Generator;
-use pocketmine\plugin\Plugin;
-use pocketmine\Server;
 use pocketmine\utils\TextFormat;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Await;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\GeneratorUtil;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\PubSub;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Traverser;
-use SOFe\WebConsole\Api\AddObjectEvent;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\Await;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
-use SOFe\WebConsole\Api\ObjectDesc;
 use SOFe\WebConsole\Api\Registry;
-use SOFe\WebConsole\Api\RemoveObjectEvent;
 use SOFe\WebConsole\Internal\Main;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\ImmutableFieldDesc;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\IntFieldType;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\Metadata;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\StringFieldType;
-use libs\_02eb9eb924190945\SOFe\WebConsole\Lib\Util;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\ImmutableFieldDesc;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\IntFieldType;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\Metadata;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\StreamingObjectDesc;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\StringFieldType;
+use libs\_7b27becfe038c4ab\SOFe\WebConsole\Lib\Util;
 use Threaded;
 use ThreadedLoggerAttachment;
-use function array_shift;
-use function bin2hex;
-use function count;
 use function microtime;
-use function random_bytes;
 use function strpos;
 use function substr;
 
@@ -41,13 +30,13 @@ final class Logging {
     const KIND = "log-message";
 
     public static function register(Main $plugin, Registry $registry) : void {
-        $queue = new LogMessageQueue(1024);
-        $queue->attach($plugin);
+        $desc = new StreamingObjectDesc(1024);
+        self::attachLogger($plugin, $desc);
         $registry->registerObject(new ObjectDef(
             group: Group::ID,
             kind: self::KIND,
             displayName: "main-log-message-kind",
-            desc: new LogMessageObjectDesc($queue),
+            desc: $desc,
             metadata: [
                 new Metadata\HideName,
                 Metadata\DefaultDisplayMode::table(),
@@ -64,7 +53,7 @@ final class Logging {
                 new Metadata\FieldDisplayPriority(10),
             ],
             desc: new ImmutableFieldDesc(
-                getter: fn(LogMessage $message) => GeneratorUtil::empty((int) ($message->microtime * 1e6)),
+                getter: fn($object) => GeneratorUtil::empty((int) ($object->object->microtime * 1e6)),
             ),
         ));
 
@@ -78,7 +67,7 @@ final class Logging {
                 new Metadata\FieldDisplayPriority(5),
             ],
             desc: new ImmutableFieldDesc(
-                getter: fn(LogMessage $message) => GeneratorUtil::empty($message->level),
+                getter: fn($object) => GeneratorUtil::empty($object->object->level),
             ),
         ));
 
@@ -92,7 +81,7 @@ final class Logging {
                 new Metadata\HideFieldByDefault,
             ],
             desc: new ImmutableFieldDesc(
-                getter: fn(LogMessage $message) => GeneratorUtil::empty($message->message),
+                getter: fn($object) => GeneratorUtil::empty($object->object->message),
             ),
         ));
 
@@ -104,9 +93,9 @@ final class Logging {
             type: new StringFieldType,
             metadata: [],
             desc: new ImmutableFieldDesc(
-                getter: function(LogMessage $message) {
+                getter: function($object) {
                     false && yield;
-                    $text = TextFormat::clean($message->message);
+                    $text = TextFormat::clean($object->object->message);
                     // strip prefix. legacy issue...
                     $split = strpos($text, "]: ");
                     if ($split !== false) {
@@ -117,5 +106,23 @@ final class Logging {
                 },
             ),
         ));
+    }
+
+    /**
+     * @param StreamingObjectDesc<LogMessage> $desc
+     */
+    private static function attachLogger(Main $plugin, StreamingObjectDesc $desc) : void {
+        $channel = new Threaded;
+        $plugin->getServer()->getLogger()->addAttachment(new LogReceiver($channel));
+
+        Await::f2c(function() use ($channel, $plugin, $desc) {
+            while (true) {
+                yield from Util::sleep($plugin, 1);
+                while (($item = $channel->shift()) !== null) {
+                    /** @var LogMessage $item */
+                    $desc->push($item);
+                }
+            }
+        });
     }
 }

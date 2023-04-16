@@ -5,18 +5,17 @@ declare(strict_types=1);
 namespace SOFe\WebConsole\Internal;
 
 use Closure;
-use Exception;
 use Generator;
 use RuntimeException;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Await;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Channel;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Loading;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Traverser;
-use SOFe\WebConsole\Api\AddObjectEvent;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\Await;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\Channel;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\Loading;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\PubSub;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
-use SOFe\WebConsole\Api\RemoveObjectEvent;
+use SOFe\WebConsole\Api\RestartAddWatch;
 
 use function array_keys;
 use function assert;
@@ -132,8 +131,15 @@ final class Handler {
 
         Await::f2c(function() use ($objectDef, $fieldFilter, $limit, $channel) {
             while (true) {
+                // each iteration indicates one cycle of re-listing everything.
                 $watch = new WatchHandler($objectDef, $limit, $fieldFilter, $channel);
-                yield from $watch->watchObjects();
+                try {
+                    yield from $watch->watchObjects();
+                } catch(RestartAddWatch $e) {
+                    continue;
+                }
+
+                break;
             }
         });
 
@@ -153,7 +159,7 @@ final class Handler {
      * @return Generator<mixed, mixed, mixed, void>
      */
     private function list(ObjectDef $objectDef, Closure $fieldFilter, ?int $limit) {
-        $list = $objectDef->desc->list();
+        $list = $objectDef->desc->watchAdd(true, $limit);
 
         try {
             if ($limit !== null) {
@@ -164,7 +170,7 @@ final class Handler {
             }
 
             while (yield from $list->next($object)) {
-                $item = yield from AccessorUtil::populateObjectFields($objectDef, $object, $fieldFilter);
+                $item = yield from self::populateObjectFields($objectDef, $object, $fieldFilter, fn($field) => $field->desc->get($object));
 
                 yield $this->jsonEncode($item) => Traverser::VALUE;
                 yield "\n" => Traverser::VALUE;

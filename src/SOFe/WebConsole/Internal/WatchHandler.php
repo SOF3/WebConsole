@@ -5,18 +5,17 @@ declare(strict_types=1);
 namespace SOFe\WebConsole\Internal;
 
 use Closure;
-use Exception;
 use Generator;
 use RuntimeException;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Await;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Channel;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Loading;
-use libs\_02eb9eb924190945\SOFe\AwaitGenerator\Traverser;
-use SOFe\WebConsole\Api\AddObjectEvent;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\Await;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\Channel;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\Loading;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\PubSub;
+use libs\_7b27becfe038c4ab\SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
-use SOFe\WebConsole\Api\RemoveObjectEvent;
+use SOFe\WebConsole\Api\RestartAddWatch;
 
 use function array_keys;
 use function assert;
@@ -265,12 +264,22 @@ use function substr;
 
 
 
+
+
+
+
+
+
+
 /**
  * @template I
  */
 final class WatchHandler {
     /** @var array<string, Closure(): void> */
     private array $objectSet = [];
+
+    /** @var PubSub<null> */
+    private PubSub $nextRemoval;
 
     /**
      * @param ObjectDef<I> $objectDef
@@ -283,27 +292,32 @@ final class WatchHandler {
         private Closure $fieldFilter,
         private Channel $channel,
     ) {
+        $this->nextRemoval = new PubSub;
     }
 
     /**
      * @return Generator<mixed, mixed, mixed, void>
      */
     public function watchObjects() {
-        $watch = $this->objectDef->desc->watch($this->limit);
+        $this->channel->sendWithoutWait([
+            "event" => "Clear",
+        ]);
+
+        $watch = $this->objectDef->desc->watchAdd(false, $this->limit);
 
         try {
-            while (yield from $watch->next($event)) {
-                $identity = $event->item;
+            while (yield from $watch->next($identity)) {
                 $name = $this->objectDef->desc->name($identity);
 
-                if ($event instanceof AddObjectEvent) {
-                    yield from $this->handleAddEvent($identity, $name);
-                } elseif ($event instanceof RemoveObjectEvent) {
-                    try {
-                        yield from $this->handleRemoveEvent($identity, $name);
-                    } catch(RestartWatch $e) {
-                        return;
+                yield from $this->handleAddEvent($identity, $name);
+
+                $sub = $this->nextRemoval->subscribe();
+                try {
+                    while ($this->limit !== null && count($this->objectSet) >= $this->limit) {
+                        yield from $sub->next($_);
                     }
+                } finally {
+                    yield from $sub->interrupt();
                 }
             }
         } finally {
@@ -318,15 +332,17 @@ final class WatchHandler {
      * @param I $identity
      */
     private function handleAddEvent($identity, string $name) : Generator {
-        if ($this->limit !== null && count($this->objectSet) >= $this->limit) {
-            return;
-        }
-
         if (isset($this->objectSet[$name])) {
             throw new RuntimeException("Object descriptor watch() yields AddObjectEvent for \"$name\" twice");
         }
 
-        $initialObject = yield from AccessorUtil::populateObjectFields($this->objectDef, $identity, $this->fieldFilter);
+        /** @var array<string, Traverser<mixed>> $watches */
+        $watches = [];
+        foreach ($this->objectDef->fields as $path => $field) {
+            $watches[$path] = $field->desc->watch($identity);
+        }
+
+        $initialObject = yield from self::populateObjectFields($this->objectDef, $identity, $this->fieldFilter, fn($field) => self::getTraverserOnce($watches[$field->path]));
         $this->channel->sendWithoutWait([
             "event" => "Added",
             "item" => $initialObject,
@@ -341,20 +357,46 @@ final class WatchHandler {
         });
         assert($cancelFn !== null, "Loading closure and Await::promise initial are called synchronously");
 
-        foreach ($this->objectDef->fields as $field) {
-            Await::g2c($this->watchObjectField($field, $identity, $cancel));
-        }
         $this->objectSet[$name] = $cancelFn;
+
+        foreach ($this->objectDef->fields as $path => $field) {
+            // TODO throw interrupt
+            Await::g2c($this->watchObjectField($field, $identity, $cancel, $watches[$path]));
+        }
+
+        // TODO throw interrupt
+        Await::g2c($this->watchObjectRemoval($identity, $name));
     }
 
     /**
      * @param I $identity
+     */
+    private function watchObjectRemoval($identity, string $name) : Generator {
+        yield from $this->objectDef->desc->watchRemove($identity);
+
+        if (!isset($this->objectSet[$name])) {
+            throw new RuntimeException("Object descriptor watchRemove() returns after objectSet no longer contains \"$name\"");
+        }
+
+        $this->objectSet[$name]();
+        unset($this->objectSet[$name]);
+
+        $this->channel->sendWithoutWait([
+            "event" => "Removed",
+            "name" => $name,
+        ]);
+
+        $this->nextRemoval->publish(null);
+    }
+
+    /**
+     * @template V
+     * @param I $identity
      * @param FieldDef<I, mixed> $field
      * @param Loading<void> $cancel
+     * @param Traverser<mixed> $watch
      */
-    private function watchObjectField(FieldDef $field, $identity, Loading $cancel) : Generator {
-        $watch = $field->desc->watch($identity);
-
+    private function watchObjectField(FieldDef $field, $identity, Loading $cancel, Traverser $watch) : Generator {
         try {
             while (true) {
                 [$which, $hasNext] = yield from Await::safeRace([
@@ -387,25 +429,54 @@ final class WatchHandler {
     }
 
     /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
      * @param I $identity
+     * @param Closure(FieldDef<I, mixed>): Generator<mixed, mixed, mixed, mixed>
+     * @return Generator<mixed, mixed, mixed, array<string, mixed>>
      */
-    private function handleRemoveEvent($identity, string $name) : Generator {
-        false && yield;
+    public static function populateObjectFields(ObjectDef $objectDef, $identity, Closure $fieldFilter, Closure $fieldGetter) : Generator {
+        $item = [
+            "_name" => $objectDef->desc->name($identity),
+        ];
 
-        if (!isset($this->objectSet[$name])) {
-            throw new RuntimeException("Object descriptor watch() yields RemoveObjectEvent for non-added object \"$name\"");
+        $futures = [];
+        foreach ($objectDef->fields as $field) {
+            if ($fieldFilter($field->path)) {
+                $futures[] = (function() use ($field, &$item, $identity, $fieldGetter) {
+                    $fieldParts = explode(".", $field->path);
+                    $rawValue = yield from $fieldGetter($field);
+                    $fieldValue = $field->type->serializeValue($rawValue);
+
+                    /** @var array<string, mixed> $ptr */
+                    $ptr = &$item;
+                    foreach ($fieldParts as $fieldPart) {
+                        if (!isset($ptr[$fieldPart])) {
+                            $ptr[$fieldPart] = [];
+                        }
+                        $ptr = &$ptr[$fieldPart];
+                    }
+                    $ptr = $fieldValue;
+                    unset($ptr);
+                })();
+            }
         }
 
-        if ($this->limit !== null) {
-            throw new RestartWatch;
+        yield from Await::all($futures);
+
+        return $item;
+    }
+
+    /**
+     * @template T
+     * @param Traverser<T> $traverser
+     * @return Generator<mixed, mixed, mixed, T>
+     */
+    private static function getTraverserOnce(Traverser $traverser) : Generator {
+        if (yield from $traverser->next($item)) {
+            return $item;
         }
 
-        $this->objectSet[$name]();
-        unset($this->objectSet[$name]);
-
-        $this->channel->sendWithoutWait([
-            "event" => "Removed",
-            "name" => $name,
-        ]);
+        throw new RuntimeException("field watch traverser returned without generating any values");
     }
 }
