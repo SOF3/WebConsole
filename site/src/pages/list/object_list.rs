@@ -59,6 +59,14 @@ fn run_watch(ctx: &Context<ObjectList>, comp: &mut ObjectList) {
     comp.objects.clear();
 }
 
+fn iter_map_order(map: &BTreeMap<String, api::Object>, desc: bool) -> impl Iterator<Item = &api::Object> {
+    if desc {
+        Box::new(map.values().rev())
+    } else {
+        Box::new(map.values()) as Box<dyn Iterator<Item = _>>
+    }
+}
+
 impl Component for ObjectList {
     type Message = ObjectListMsg;
     type Properties = ObjectListProps;
@@ -116,9 +124,8 @@ impl Component for ObjectList {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let hidden = &ctx.props().hidden;
-        let mut fields: Vec<_> = ctx
-            .props()
-            .def
+        let def = &ctx.props().def;
+        let mut fields: Vec<_> = def
             .fields
             .values()
             .filter(|&field| !hidden.contains(&field.path))
@@ -146,9 +153,9 @@ impl Component for ObjectList {
             match ctx.props().display_mode {
                 DisplayMode::Cards => {
                     div {
-                        for object in self.objects.values() {
+                        for object in iter_map_order(&self.objects, def.metadata.desc_name) {
                             div(class = "card object-thumbnail") {
-                                if !ctx.props().def.metadata.hide_name {
+                                if !def.metadata.hide_name {
                                     header(class = "card-header") {
                                         p(class = "card-header-title") {
                                             + &object.name;
@@ -184,7 +191,7 @@ impl Component for ObjectList {
                     table(class = "table") {
                         thead {
                             tr {
-                                if !ctx.props().def.metadata.hide_name {
+                                if !def.metadata.hide_name {
                                     th { + i18n.disp("base-name"); }
                                 }
 
@@ -194,9 +201,9 @@ impl Component for ObjectList {
                             }
                         }
                         tbody {
-                            for object in self.objects.values() {
+                            for object in iter_map_order(&self.objects, def.metadata.desc_name) {
                                 tr {
-                                    if !ctx.props().def.metadata.hide_name {
+                                    if !def.metadata.hide_name {
                                         th {
                                             + &object.name;
                                         }

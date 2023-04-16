@@ -12,16 +12,18 @@ use SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\Api\ObjectDesc;
 use function array_key_first;
 use function array_slice;
-use function bin2hex;
+use function bcadd;
 use function count;
-use function random_bytes;
-use function random_int;
+use function dechex;
+use function str_pad;
+use function strlen;
 
 /**
  * @template I
  * @implements ObjectDesc<StreamingObject<I>>
  */
 final class StreamingObjectDesc implements ObjectDesc {
+    private string $nextId = "1";
     /** @var array<string, StreamingObject<I>> */
     private array $data = [];
 
@@ -41,13 +43,25 @@ final class StreamingObjectDesc implements ObjectDesc {
         $this->removals = new IndexedPubSub;
     }
 
+    private function generateId() : string {
+        $id = $this->nextId;
+        $this->nextId = bcadd($id, "1");
+
+        $length = strlen($id);
+        $lengthString = dechex($length);
+        $lengthPadded = str_pad($lengthString, 16, "0", STR_PAD_LEFT);
+
+        // Due to the padding, $lengthPadded is automatically natural-ordered.
+        // Within the same length, the ID values are also automatically natural-ordered.
+
+        return "$lengthPadded,$id";
+    }
+
     /**
      * @param I $rawObject
      */
     public function push($rawObject) : void {
-        do {
-            $name = bin2hex(random_bytes(8));
-        } while (isset($this->data[$name]));
+        $name = $this->generateId();
 
         $object = new StreamingObject($name, $rawObject);
 
@@ -78,8 +92,6 @@ final class StreamingObjectDesc implements ObjectDesc {
 
     public function watchAdd(bool $listOnly, ?int $limit) : Traverser {
         return Traverser::fromClosure(function() use ($listOnly, $limit) {
-            $runId = random_int(0, 1666);
-
             $initial = $this->data;
             if ($limit !== null && count($initial) > $limit) {
                 // we always want the last $limit items

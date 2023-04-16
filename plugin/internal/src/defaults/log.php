@@ -39,6 +39,7 @@ final class Logging {
             desc: $desc,
             metadata: [
                 new Metadata\HideName,
+                new Metadata\DescendingSort,
                 Metadata\DefaultDisplayMode::table(),
             ],
         ));

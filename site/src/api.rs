@@ -191,6 +191,10 @@ pub struct KnownObjectMetadata {
     #[serde(default)]
     pub hide_name: bool,
 
+    #[serde(rename = "webconsole/site/desc-name")]
+    #[serde(default)]
+    pub desc_name: bool,
+
     #[serde(rename = "webconsole/site/default-display-mode")]
     #[serde(default)]
     pub default_display_mode: list_page::DisplayMode,
