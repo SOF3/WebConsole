@@ -183,6 +183,46 @@ final class Handler {
         }
     }
 
+    /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
+     * @param I $identity
+     * @param Closure(string): bool $fieldFilter
+     * @param Closure(FieldDef<I, mixed>): Generator<mixed, mixed, mixed, mixed> $fieldGetter
+     * @return Generator<mixed, mixed, mixed, array<string, mixed>>
+     */
+    public static function populateObjectFields(ObjectDef $objectDef, $identity, Closure $fieldFilter, Closure $fieldGetter) : Generator {
+        $item = [
+            "_name" => $objectDef->desc->name($identity),
+        ];
+
+        $futures = [];
+        foreach ($objectDef->fields as $field) {
+            if ($fieldFilter($field->path)) {
+                $futures[] = (function() use ($field, &$item, $fieldGetter) {
+                    $fieldParts = explode(".", $field->path);
+                    $rawValue = yield from $fieldGetter($field);
+                    $fieldValue = $field->type->serializeValue($rawValue);
+
+                    /** @var array<string, mixed> $ptr */
+                    $ptr = &$item;
+                    foreach ($fieldParts as $fieldPart) {
+                        if (!isset($ptr[$fieldPart])) {
+                            $ptr[$fieldPart] = [];
+                        }
+                        $ptr = &$ptr[$fieldPart];
+                    }
+                    $ptr = $fieldValue;
+                    unset($ptr);
+                })();
+            }
+        }
+
+        yield from Await::all($futures);
+
+        return $item;
+    }
+
     private function discovery() : HttpResponse {
         $output = [
             "groups" => [],
@@ -342,7 +382,7 @@ final class WatchHandler {
             $watches[$path] = $field->desc->watch($identity);
         }
 
-        $initialObject = yield from self::populateObjectFields($this->objectDef, $identity, $this->fieldFilter, fn($field) => self::getTraverserOnce($watches[$field->path]));
+        $initialObject = yield from Handler::populateObjectFields($this->objectDef, $identity, $this->fieldFilter, fn($field) => self::getTraverserOnce($watches[$field->path]));
         $this->channel->sendWithoutWait([
             "event" => "Added",
             "item" => $initialObject,
@@ -390,7 +430,6 @@ final class WatchHandler {
     }
 
     /**
-     * @template V
      * @param I $identity
      * @param FieldDef<I, mixed> $field
      * @param Loading<void> $cancel
@@ -426,45 +465,6 @@ final class WatchHandler {
                 throw $e;
             }
         }
-    }
-
-    /**
-     * @template I
-     * @param ObjectDef<I> $objectDef
-     * @param I $identity
-     * @param Closure(FieldDef<I, mixed>): Generator<mixed, mixed, mixed, mixed>
-     * @return Generator<mixed, mixed, mixed, array<string, mixed>>
-     */
-    public static function populateObjectFields(ObjectDef $objectDef, $identity, Closure $fieldFilter, Closure $fieldGetter) : Generator {
-        $item = [
-            "_name" => $objectDef->desc->name($identity),
-        ];
-
-        $futures = [];
-        foreach ($objectDef->fields as $field) {
-            if ($fieldFilter($field->path)) {
-                $futures[] = (function() use ($field, &$item, $identity, $fieldGetter) {
-                    $fieldParts = explode(".", $field->path);
-                    $rawValue = yield from $fieldGetter($field);
-                    $fieldValue = $field->type->serializeValue($rawValue);
-
-                    /** @var array<string, mixed> $ptr */
-                    $ptr = &$item;
-                    foreach ($fieldParts as $fieldPart) {
-                        if (!isset($ptr[$fieldPart])) {
-                            $ptr[$fieldPart] = [];
-                        }
-                        $ptr = &$ptr[$fieldPart];
-                    }
-                    $ptr = $fieldValue;
-                    unset($ptr);
-                })();
-            }
-        }
-
-        yield from Await::all($futures);
-
-        return $item;
     }
 
     /**
