@@ -23,9 +23,6 @@ use function microtime;
 use function strpos;
 use function substr;
 
-/**
- * @internal
- */
 final class Logging {
     const KIND = "log-message";
 
@@ -92,7 +89,6 @@ final class Logging {
             path: "message.clean",
             displayName: "main-log-message-message-clean",
             type: new StringFieldType,
-            metadata: [],
             desc: new ImmutableFieldDesc(
                 getter: function($object) {
                     false && yield;

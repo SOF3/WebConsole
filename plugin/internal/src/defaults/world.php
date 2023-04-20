@@ -19,9 +19,6 @@ use SOFe\WebConsole\Lib\PollingFieldDesc;
 use SOFe\WebConsole\Lib\StringFieldType;
 
 
-/**
- * @internal
- */
 final class Worlds {
     const KIND = "world";
 
@@ -41,7 +38,6 @@ final class Worlds {
                 removeEvent: WorldUnloadEvent::class,
                 resolveRemoveEvent: fn(WorldUnloadEvent $event) => $event->getWorld(),
             ),
-            metadata: [],
         ));
 
         $registry->registerField(new FieldDef(
@@ -50,7 +46,6 @@ final class Worlds {
             path: "displayName",
             displayName: "main-world-display-name",
             type: new StringFieldType,
-            metadata: [],
             desc: new ImmutableFieldDesc(fn(World $world) => GeneratorUtil::empty($world->getDisplayName())),
         ));
 
@@ -60,7 +55,6 @@ final class Worlds {
             path: "time",
             displayName: "main-world-time",
             type: new IntFieldType,
-            metadata: [],
             desc: new PollingFieldDesc(
                 plugin: $plugin,
                 getter: fn(World $world) => GeneratorUtil::empty($world->getTimeOfDay()),

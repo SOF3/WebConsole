@@ -9,20 +9,20 @@ use pocketmine\event\entity\EntityRegainHealthEvent;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\WebConsole\Api\FieldDef;
+use SOFe\WebConsole\Api\FieldMutationResponse;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
+use SOFe\WebConsole\Api\SimpleMutableFieldDesc;
 use SOFe\WebConsole\Internal\Main;
 use SOFe\WebConsole\Lib\EventBasedFieldDesc;
 use SOFe\WebConsole\Lib\EventBasedObjectDesc;
 use SOFe\WebConsole\Lib\FloatFieldType;
 
 
-/**
- * @internal
- */
 final class Players {
     const KIND = "player";
 
@@ -42,7 +42,6 @@ final class Players {
                 removeEvent: PlayerQuitEvent::class,
                 resolveRemoveEvent: fn(PlayerQuitEvent $event) => $event->getPlayer(),
             ),
-            metadata: [],
         ));
 
         $registry->registerField(new FieldDef(
@@ -51,7 +50,6 @@ final class Players {
             path: "entity.health",
             displayName: "main-player-entity-health",
             type: new FloatFieldType,
-            metadata: [],
             desc: new EventBasedFieldDesc(
                 plugin: $plugin,
                 events: [EntityDamageEvent::class, EntityRegainHealthEvent::class],
@@ -61,23 +59,36 @@ final class Players {
         ));
 
         foreach ([
-            ["x", fn(Player $player) => (float) $player->getLocation()->getX()],
-            ["y", fn(Player $player) => (float) $player->getLocation()->getY()],
-            ["z", fn(Player $player) => (float) $player->getLocation()->getZ()],
-        ] as [$name, $getter]) {
+            ["x", fn(Player $player) => (float) $player->getLocation()->getX(), fn(Vector3 $v, float $x) => $v->x = $x],
+            ["y", fn(Player $player) => (float) $player->getLocation()->getY(), fn(Vector3 $v, float $y) => $v->y = $y],
+            ["z", fn(Player $player) => (float) $player->getLocation()->getZ(), fn(Vector3 $v, float $z) => $v->z = $z],
+        ] as [$name, $getter, $setter]) {
             $registry->registerField(new FieldDef(
                 objectGroup: Group::ID,
                 objectKind: self::KIND,
                 path: "entity.location.$name",
                 displayName: "main-player-entity-location-$name",
                 type: new FloatFieldType,
-                metadata: [],
                 desc: new EventBasedFieldDesc(
                     plugin: $plugin,
                     events: [PlayerMoveEvent::class],
                     getter: fn($player) => GeneratorUtil::empty($getter($player)),
                     testEvent: fn($event, $player) => $event->getPlayer() === $player,
                 ),
+                mutableDesc: new SimpleMutableFieldDesc(function(Player $player, float $value) use ($setter) {
+                    $pos = $player->getPosition();
+                    $setter($pos, $value);
+                    $ok = $player->teleport($pos);
+                    if (!$ok) {
+                        return new FieldMutationResponse(
+                            success: false,
+                            errorCode: "Cancelled",
+                            i18nMessage: "main-player-teleport-cancel",
+                        );
+                    }
+
+                    return FieldMutationResponse::success();
+                }),
             ));
         }
     }

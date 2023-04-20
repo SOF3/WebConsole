@@ -35,7 +35,7 @@ final class ObjectDef {
         public string $kind,
         public string $displayName,
         public ObjectDesc $desc,
-        public array $metadata,
+        public array $metadata = [],
     ) {
     }
 

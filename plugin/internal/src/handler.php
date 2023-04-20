@@ -22,6 +22,8 @@ use function assert;
 use function count;
 use function explode;
 use function in_array;
+use function is_array;
+use function json_decode;
 use function json_encode;
 use function json_last_error_msg;
 use function ltrim;
@@ -82,37 +84,14 @@ final class Handler {
             }
 
             if ($name === null) {
-                /** @var Closure(string): bool $fieldFilter */
-                $fieldFilter = fn() => true;
-                if (($fields = $request->address->query["fields"] ?? null) !== null) {
-                    $fieldFilter = fn(string $id) => in_array($id, $fields, true);
-                }
-
-                if ($isWatch) {
-                    return new HttpResponse(
-                        "HTTP/1.0",
-                        "200 OK",
-                        new HttpHeaders([
-                            "Cache-Control" => "no-cache",
-                            "Content-Type" => "text/event-stream; charset=utf-8",
-                        ]),
-                        Traverser::fromClosure(function() use ($objectDef, $fieldFilter, $limit) {
-                            yield from $this->watch($objectDef, $fieldFilter, $limit);
-                        }),
-                    );
-                } else {
-                    return new HttpResponse(
-                        "HTTP/1.0",
-                        "200 OK",
-                        new HttpHeaders([
-                            "Cache-Control" => "no-cache",
-                        ]),
-                        Traverser::fromClosure(function() use ($objectDef, $fieldFilter, $limit) {
-                            yield from $this->list($objectDef, $fieldFilter, $limit);
-                        }),
-                    );
-                }
+                return yield from $this->objectListWatch($request, $objectDef, $isWatch, $limit);
             }
+
+            return yield from $this->objectGet($request, $objectDef, $isWatch);
+        }
+
+        if ($request->address->method === "PATCH") {
+            return yield from $this->objectPatch($request, $objectDef, $name);
         }
 
         return new HttpResponse("HTTP/1.0", "405 Method Not Allowed", new HttpHeaders, Traverser::fromClosure(function() {
@@ -123,10 +102,62 @@ final class Handler {
     /**
      * @template I
      * @param ObjectDef<I> $objectDef
+     * @return Generator<mixed, mixed, mixed, HttpResponse>
+     */
+    private function objectGet(HttpRequest $request, ObjectDef $objectDef, bool $isWatch) : Generator {
+        false && yield;
+        // TODO
+        return $this->internalError("not yet implemented");
+    }
+
+    /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
+     * @return Generator<mixed, mixed, mixed, HttpResponse>
+     */
+    private function objectListWatch(HttpRequest $request, ObjectDef $objectDef, bool $isWatch, ?int $limit) : Generator {
+        false && yield;
+
+        /** @var Closure(string): bool $fieldFilter */
+        $fieldFilter = fn() => true;
+        if (($fields = $request->address->query["fields"] ?? null) !== null) {
+            $fieldFilter = fn(string $id) => in_array($id, $fields, true);
+        }
+
+        if ($isWatch) {
+            return new HttpResponse(
+                "HTTP/1.0",
+                "200 OK",
+                new HttpHeaders([
+                    "Cache-Control" => "no-cache",
+                    "Content-Type" => "text/event-stream; charset=utf-8",
+                ]),
+                Traverser::fromClosure(function() use ($objectDef, $fieldFilter, $limit) {
+                    yield from $this->objectWatch($objectDef, $fieldFilter, $limit);
+                }),
+            );
+        } else {
+            return new HttpResponse(
+                "HTTP/1.0",
+                "200 OK",
+                new HttpHeaders([
+                    "Cache-Control" => "no-cache",
+                ]),
+                Traverser::fromClosure(function() use ($objectDef, $fieldFilter, $limit) {
+                    yield from $this->objectList($objectDef, $fieldFilter, $limit);
+                }),
+            );
+        }
+    }
+
+
+    /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
      * @param Closure(string): bool $fieldFilter
      * @return Generator<mixed, mixed, mixed, void>
      */
-    private function watch(ObjectDef $objectDef, Closure $fieldFilter, ?int $limit) : Generator {
+    private function objectWatch(ObjectDef $objectDef, Closure $fieldFilter, ?int $limit) : Generator {
         $channel = new Channel;
 
         Await::f2c(function() use ($objectDef, $fieldFilter, $limit, $channel) {
@@ -158,7 +189,7 @@ final class Handler {
      * @param Closure(string): bool $fieldFilter
      * @return Generator<mixed, mixed, mixed, void>
      */
-    private function list(ObjectDef $objectDef, Closure $fieldFilter, ?int $limit) {
+    private function objectList(ObjectDef $objectDef, Closure $fieldFilter, ?int $limit) {
         $list = $objectDef->desc->watchAdd(true, $limit);
 
         try {
@@ -192,6 +223,7 @@ final class Handler {
      * @return Generator<mixed, mixed, mixed, array<string, mixed>>
      */
     public static function populateObjectFields(ObjectDef $objectDef, $identity, Closure $fieldFilter, Closure $fieldGetter) : Generator {
+        /** @var array<string, mixed> $item */
         $item = [
             "_name" => $objectDef->desc->name($identity),
         ];
@@ -200,20 +232,9 @@ final class Handler {
         foreach ($objectDef->fields as $field) {
             if ($fieldFilter($field->path)) {
                 $futures[] = (function() use ($field, &$item, $fieldGetter) {
-                    $fieldParts = explode(".", $field->path);
                     $rawValue = yield from $fieldGetter($field);
                     $fieldValue = $field->type->serializeValue($rawValue);
-
-                    /** @var array<string, mixed> $ptr */
-                    $ptr = &$item;
-                    foreach ($fieldParts as $fieldPart) {
-                        if (!isset($ptr[$fieldPart])) {
-                            $ptr[$fieldPart] = [];
-                        }
-                        $ptr = &$ptr[$fieldPart];
-                    }
-                    $ptr = $fieldValue;
-                    unset($ptr);
+                    self::setRecursive($item, $field->path, $fieldValue);
                 })();
             }
         }
@@ -221,6 +242,76 @@ final class Handler {
         yield from Await::all($futures);
 
         return $item;
+    }
+
+    /**
+     * @param array<string, mixed> $object
+     */
+    private static function setRecursive(array &$object, string $path, mixed $value) : void {
+        $parts = explode(".", $path);
+
+        /** @var array<string, mixed> $ptr */
+        $ptr = &$object;
+        foreach ($parts as $fieldPart) {
+            if (!isset($ptr[$fieldPart])) {
+                $ptr[$fieldPart] = [];
+            }
+            $ptr = &$ptr[$fieldPart];
+        }
+        $ptr = $value;
+    }
+
+    /**
+     * @param array<string, mixed> $object
+     * @return array{mixed, bool}
+     */
+    private static function getRecursive(array $object, string $path) : array {
+        $parts = explode(".", $path);
+
+        $ptr = $object;
+        foreach ($parts as $fieldPart) {
+            if (!isset($ptr[$fieldPart])) {
+                return [null, false];
+            }
+            $ptr = $ptr[$fieldPart];
+        }
+        return [$ptr, true];
+    }
+
+    /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
+     * @return Generator<mixed, mixed, mixed, HttpResponse>
+     */
+    private function objectPatch(HttpRequest $request, ObjectDef $objectDef, ?string $name) : Generator {
+        if ($name === null) {
+            return $this->badRequest("patch requests must contain a name");
+        }
+
+        $object = json_decode($request->body, true);
+        if (!is_array($object)) {
+            return $this->badRequest("Patch body must be a JSON object");
+        }
+
+        $identity = yield from $objectDef->desc->get($name);
+        if ($identity === null) {
+            return $this->notFound();
+        }
+
+        $responses = [];
+        foreach ($objectDef->fields as $field) {
+            $desc = $field->mutableDesc;
+            if ($desc !== null) {
+                [$value, $exists] = self::getRecursive($object, $field->path);
+                var_dump($field->path, $value, $exists);
+                if ($exists) {
+                    $response = yield from $desc->set($identity, $value);
+                    $responses[$field->path] = $response->serialize();
+                }
+            }
+        }
+
+        return $this->okJson($responses);
     }
 
     private function discovery() : HttpResponse {
@@ -243,6 +334,7 @@ final class Handler {
                     "display_name" => $field->displayName,
                     "metadata" => $field->getMetadata(),
                     "type" => $field->type->serializeType(),
+                    "mutable" => $field->mutableDesc !== null,
                 ];
             }
 
@@ -296,6 +388,12 @@ final class Handler {
 
     private function jsonEncode(mixed $value) : string|false {
         return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+
+    private function badRequest(string $error) : HttpResponse {
+        return new HttpResponse("HTTP/1.0", "400 Bad Request", new HttpHeaders, Traverser::fromClosure(function() use ($error) {
+            yield $error => Traverser::VALUE;
+        }));
     }
 
     private function internalError(string $error) : HttpResponse {

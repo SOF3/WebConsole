@@ -4,6 +4,7 @@ main-player-entity-health = health
 main-player-entity-location-x = x
 main-player-entity-location-y = y
 main-player-entity-location-z = z
+main-player-teleport-cancel = Cannot teleport because a plugin cancelled the event
 main-world-kind = Loaded worlds
 main-world-display-name = display name
 main-world-time = world time

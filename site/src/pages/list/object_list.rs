@@ -59,7 +59,10 @@ fn run_watch(ctx: &Context<ObjectList>, comp: &mut ObjectList) {
     comp.objects.clear();
 }
 
-fn iter_map_order(map: &BTreeMap<String, api::Object>, desc: bool) -> impl Iterator<Item = &api::Object> {
+fn iter_map_order(
+    map: &BTreeMap<String, api::Object>,
+    desc: bool,
+) -> impl Iterator<Item = &api::Object> {
     if desc {
         Box::new(map.values().rev())
     } else {
@@ -125,11 +128,8 @@ impl Component for ObjectList {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let hidden = &ctx.props().hidden;
         let def = &ctx.props().def;
-        let mut fields: Vec<_> = def
-            .fields
-            .values()
-            .filter(|&field| !hidden.contains(&field.path))
-            .collect();
+        let mut fields: Vec<_> =
+            def.fields.values().filter(|&field| !hidden.contains(&field.path)).collect();
         fields.sort_by_key(|field| (cmp::Reverse(field.metadata.display_priority), &field.path));
 
         let i18n = &ctx.props().i18n;
