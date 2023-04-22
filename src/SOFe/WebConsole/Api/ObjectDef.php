@@ -6,7 +6,7 @@ namespace SOFe\WebConsole\Api;
 
 use Exception;
 use Generator;
-use libs\_a56d4359543efb82\SOFe\AwaitGenerator\Traverser;
+use libs\_cb07bb7a956d14fd\SOFe\AwaitGenerator\Traverser;
 use function sprintf;
 
 
