@@ -6,3 +6,7 @@ base-properties-search = Search
 base-display-card = Cards
 base-display-table = Table
 base-name = Name
+base-list-empty = nil
+base-list-item-count-nested = {$count} items
+base-list-item-count-prefix = [{$count} items]
+base-compound-empty = nil

@@ -21,7 +21,7 @@ use SOFe\WebConsole\Internal\Main;
 use SOFe\WebConsole\Lib\EventBasedFieldDesc;
 use SOFe\WebConsole\Lib\EventBasedObjectDesc;
 use SOFe\WebConsole\Lib\FloatFieldType;
-
+use SOFe\WebConsole\Lib\Vector3FieldType;
 
 final class Players {
     const KIND = "player";
@@ -58,38 +58,31 @@ final class Players {
             ),
         ));
 
-        foreach ([
-            ["x", fn(Player $player) => (float) $player->getLocation()->getX(), fn(Vector3 $v, float $x) => $v->x = $x],
-            ["y", fn(Player $player) => (float) $player->getLocation()->getY(), fn(Vector3 $v, float $y) => $v->y = $y],
-            ["z", fn(Player $player) => (float) $player->getLocation()->getZ(), fn(Vector3 $v, float $z) => $v->z = $z],
-        ] as [$name, $getter, $setter]) {
-            $registry->registerField(new FieldDef(
-                objectGroup: Group::ID,
-                objectKind: self::KIND,
-                path: "entity.location.$name",
-                displayName: "main-player-entity-location-$name",
-                type: new FloatFieldType,
-                desc: new EventBasedFieldDesc(
-                    plugin: $plugin,
-                    events: [PlayerMoveEvent::class],
-                    getter: fn($player) => GeneratorUtil::empty($getter($player)),
-                    testEvent: fn($event, $player) => $event->getPlayer() === $player,
-                ),
-                mutableDesc: new SimpleMutableFieldDesc(function(Player $player, float $value) use ($setter) {
-                    $pos = $player->getPosition();
-                    $setter($pos, $value);
-                    $ok = $player->teleport($pos);
-                    if (!$ok) {
-                        return new FieldMutationResponse(
-                            success: false,
-                            errorCode: "Cancelled",
-                            i18nMessage: "main-player-teleport-cancel",
-                        );
-                    }
+        $registry->registerField(new FieldDef(
+            objectGroup: Group::ID,
+            objectKind: self::KIND,
+            path: "entity.position",
+            displayName: "main-player-entity-position",
+            type: new Vector3FieldType,
+            metadata: [],
+            desc: new EventBasedFieldDesc(
+                plugin: $plugin,
+                events: [PlayerMoveEvent::class],
+                getter: fn($player) => GeneratorUtil::empty($player->getLocation()),
+                testEvent: fn($event, $player) => $event->getPlayer() === $player,
+            ),
+            mutableDesc: new SimpleMutableFieldDesc(function(Player $player, Vector3 $value) {
+                $ok = $player->teleport($value);
+                if (!$ok) {
+                    return new FieldMutationResponse(
+                        success: false,
+                        errorCode: "Cancelled",
+                        i18nMessage: "main-player-teleport-cancel",
+                    );
+                }
 
-                    return FieldMutationResponse::success();
-                }),
-            ));
-        }
+                return FieldMutationResponse::success();
+            }),
+        ));
     }
 }

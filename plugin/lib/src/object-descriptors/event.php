@@ -92,6 +92,8 @@ final class EventBasedObjectDesc implements ObjectDesc {
         if ($this->removePubSub !== null) {
             return $this->removePubSub;
         }
+
+        /** @var IndexedPubSub<RemoveE> $ps */
         $ps = new IndexedPubSub;
         $this->removePubSub = $ps;
 
