@@ -1,7 +1,7 @@
 main-group = Main
 main-player-kind = Online players
 main-player-entity-health = health
-main-player-entity-location = position
+main-player-entity-position = position
 main-world-kind = Loaded worlds
 main-world-display-name = display name
 main-world-time = world time

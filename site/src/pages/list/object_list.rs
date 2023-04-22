@@ -167,18 +167,18 @@ impl Component for ObjectList {
                                     div(class = "card-content") {
                                         div(class = "content") {
                                             for &field in &fields {
-                                                if let Some(value) = util::get_json_path(&object.fields, &field.path) {
-                                                    span(class = "tag") {
-                                                        + i18n.disp(&field.display_name);
-                                                    }
+                                                let value = util::get_json_path(&object.fields, &field.path).cloned().unwrap_or(serde_json::Value::Null);
 
-                                                    comps::InlineDisplay(
-                                                        i18n = i18n.clone(),
-                                                        value = value.clone(),
-                                                        ty = field.ty.clone(),
-                                                    );
-                                                    + " ";
+                                                span(class = "tag is-primary is-light") {
+                                                    + i18n.disp(&field.display_name);
                                                 }
+
+                                                comps::InlineDisplay(
+                                                    i18n = i18n.clone(),
+                                                    value = value.clone(),
+                                                    ty = field.ty.clone(),
+                                                    );
+                                                + " ";
                                             }
                                         }
                                     }

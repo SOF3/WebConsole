@@ -35,6 +35,8 @@ pub struct RcStr(pub Rc<str>);
 impl RcStr {
     pub fn new(s: impl Into<Rc<str>>) -> Self { Self(s.into()) }
 
+    pub fn as_str(&self) -> &str { &*self.0 }
+
     pub fn to_istring(&self) -> AttrValue { AttrValue::Rc(self.0.clone()) }
 }
 

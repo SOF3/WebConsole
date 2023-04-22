@@ -1,4 +1,5 @@
 use defy::defy;
+use fluent::fluent_args;
 use yew::prelude::*;
 
 use crate::api;
@@ -65,18 +66,99 @@ pub fn InlineDisplay(props: &Props) -> Html {
                             i18n = props.i18n.clone(),
                             value = props.value.clone(),
                             ty = (&**item).clone(),
+                            nested = false, // this is not visually nested, no need to compact the view.
                         );
                     }
                 }
             }
-            _ => { +"TODO"; }
+            api::FieldType::List { item } => {
+                match &props.value {
+                    serde_json::Value::Null => {
+                        span(class = "is-italic has-text-weight-light") {
+                            + props.i18n.disp("base-list-empty");
+                        }
+                    }
+                    serde_json::Value::Array(array) if array.is_empty() => {
+                        span(class = "is-italic has-text-weight-light") {
+                            + props.i18n.disp("base-list-empty");
+                        }
+                    }
+                    serde_json::Value::Array(array) => {
+                        if props.nested {
+                            span(class = "is-italic") {
+                                + props.i18n.disp_with("base-list-item-count-nested", fluent_args!["count" => array.len()]);
+                            }
+                        } else {
+                            + props.i18n.disp_with("base-list-item-count-prefix", fluent_args!["count" => array.len()]);
+                            for element in array.iter().take(3) {
+                                InlineDisplay(
+                                    i18n = props.i18n.clone(),
+                                    value = element.clone(),
+                                    ty = (&**item).clone(),
+                                    nested = true,
+                                );
+                            }
+                        }
+                    }
+                    _ => { + "invalid value"; }
+                }
+            }
+            api::FieldType::Compound { fields } => {
+                let map = match &props.value {
+                    serde_json::Value::Null => Some(serde_json::Map::default()),
+                    serde_json::Value::Array(array) if array.is_empty() => Some(serde_json::Map::default()),
+                    serde_json::Value::Object(map) if map.is_empty() => Some(serde_json::Map::default()),
+                    serde_json::Value::Object(map) => Some(map.clone()),
+                    _ => None,
+                };
+
+                match map {
+                    Some(map) if map.is_empty() => {
+                        span(class = "is-italic has-text-weight-light") {
+                            + props.i18n.disp("base-compound-empty");
+                        }
+                    }
+                    Some(map) => {
+                        if props.nested {
+                            + "{\u{2026}}";
+                        } else {
+                            for field in fields.values() {
+                                span(class = "tag is-info is-light") {
+                                    + props.i18n.disp(&field.name);
+                                }
+                                InlineDisplay(
+                                    i18n = props.i18n.clone(),
+                                    value = map.get(field.key.as_str()).cloned().unwrap_or(serde_json::Value::Null),
+                                    ty = field.ty.clone(),
+                                    nested = true,
+                                );
+                            }
+                        }
+                    }
+                    None => { + "invalid value"; }
+                }
+            }
+            api::FieldType::Object { gk } => {
+                match &props.value {
+                    serde_json::Value::String(name) => {
+                        a(
+                            href = format!("/{}/{}/{}", &gk.group, &gk.kind, name),
+                        ) {
+                            + name;
+                        }
+                    }
+                    _ => { + "invalid value"; }
+                }
+            }
         }
     }
 }
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
-    pub i18n:  I18n,
-    pub value: serde_json::Value,
-    pub ty:    api::FieldType,
+    pub i18n:   I18n,
+    pub value:  serde_json::Value,
+    pub ty:     api::FieldType,
+    #[prop_or_default]
+    pub nested: bool,
 }

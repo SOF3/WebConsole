@@ -22,12 +22,12 @@ final class Vector3FieldType implements FieldType {
      * All bounds are inclusive.
      */
     public function __construct(
-        public ?float $minX,
-        public ?float $minY,
-        public ?float $minZ,
-        public ?float $maxX,
-        public ?float $maxY,
-        public ?float $maxZ,
+        public ?float $minX = null,
+        public ?float $minY = null,
+        public ?float $minZ = null,
+        public ?float $maxX = null,
+        public ?float $maxY = null,
+        public ?float $maxZ = null,
     ) {
         $this->x = new CompoundSubfield("x", "main-types-x", new FloatFieldType(min: $minX, max: $maxX));
         $this->y = new CompoundSubfield("y", "main-types-y", new FloatFieldType(min: $minY, max: $maxY));
@@ -67,12 +67,12 @@ final class IntVector3FieldType implements FieldType {
      * All bounds are inclusive.
      */
     public function __construct(
-        public ?int $minX,
-        public ?int $minY,
-        public ?int $minZ,
-        public ?int $maxX,
-        public ?int $maxY,
-        public ?int $maxZ,
+        public ?int $minX = null,
+        public ?int $minY = null,
+        public ?int $minZ = null,
+        public ?int $maxX = null,
+        public ?int $maxY = null,
+        public ?int $maxZ = null,
     ) {
         $this->x = new CompoundSubfield("x", "main-types-x", new IntFieldType(min: $minX, max: $maxX));
         $this->y = new CompoundSubfield("y", "main-types-y", new IntFieldType(min: $minY, max: $maxY));

@@ -264,10 +264,10 @@ pub enum FieldType {
 
 #[derive(Deserialize, Clone, PartialEq)]
 pub struct CompoundSubfield {
-    key:  RcStr,
-    name: i18n::Key,
+    pub key:  RcStr,
+    pub name: i18n::Key,
     #[serde(rename = "type")]
-    ty:   FieldType,
+    pub ty:   FieldType,
 }
 
 impl HasId<RcStr> for CompoundSubfield {
