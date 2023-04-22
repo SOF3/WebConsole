@@ -7,16 +7,16 @@ namespace SOFe\WebConsole\Defaults;
 use pocketmine\event\world\WorldLoadEvent;
 use pocketmine\event\world\WorldUnloadEvent;
 use pocketmine\world\World;
-use libs\_f06c6738f51e13fc\SOFe\AwaitGenerator\GeneratorUtil;
+use libs\_66aebb413d7f2b17\SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
 use SOFe\WebConsole\Internal\Main;
-use libs\_f06c6738f51e13fc\SOFe\WebConsole\Lib\EventBasedObjectDesc;
-use libs\_f06c6738f51e13fc\SOFe\WebConsole\Lib\ImmutableFieldDesc;
-use libs\_f06c6738f51e13fc\SOFe\WebConsole\Lib\IntFieldType;
-use libs\_f06c6738f51e13fc\SOFe\WebConsole\Lib\PollingFieldDesc;
-use libs\_f06c6738f51e13fc\SOFe\WebConsole\Lib\StringFieldType;
+use libs\_66aebb413d7f2b17\SOFe\WebConsole\Lib\EventBasedObjectDesc;
+use libs\_66aebb413d7f2b17\SOFe\WebConsole\Lib\ImmutableFieldDesc;
+use libs\_66aebb413d7f2b17\SOFe\WebConsole\Lib\IntFieldType;
+use libs\_66aebb413d7f2b17\SOFe\WebConsole\Lib\PollingFieldDesc;
+use libs\_66aebb413d7f2b17\SOFe\WebConsole\Lib\StringFieldType;
 
 
 final class Worlds {

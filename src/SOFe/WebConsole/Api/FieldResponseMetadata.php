@@ -6,7 +6,7 @@ namespace SOFe\WebConsole\Api;
 
 use Closure;
 use Generator;
-use libs\_f06c6738f51e13fc\SOFe\AwaitGenerator\Traverser;
+use libs\_66aebb413d7f2b17\SOFe\AwaitGenerator\Traverser;
 use function sprintf;
 
 
