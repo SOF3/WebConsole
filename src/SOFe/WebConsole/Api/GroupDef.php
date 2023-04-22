@@ -6,7 +6,7 @@ namespace SOFe\WebConsole\Api;
 
 use Exception;
 use Generator;
-use libs\_05d4a3a3240f542a\SOFe\AwaitGenerator\Traverser;
+use libs\_a4e334bbcde2cb77\SOFe\AwaitGenerator\Traverser;
 use function sprintf;
 
 final class GroupDef {
