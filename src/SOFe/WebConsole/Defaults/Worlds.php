@@ -7,16 +7,16 @@ namespace SOFe\WebConsole\Defaults;
 use pocketmine\event\world\WorldLoadEvent;
 use pocketmine\event\world\WorldUnloadEvent;
 use pocketmine\world\World;
-use libs\_a4e334bbcde2cb77\SOFe\AwaitGenerator\GeneratorUtil;
+use libs\_a56d4359543efb82\SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
 use SOFe\WebConsole\Internal\Main;
-use libs\_a4e334bbcde2cb77\SOFe\WebConsole\Lib\EventBasedObjectDesc;
-use libs\_a4e334bbcde2cb77\SOFe\WebConsole\Lib\ImmutableFieldDesc;
-use libs\_a4e334bbcde2cb77\SOFe\WebConsole\Lib\IntFieldType;
-use libs\_a4e334bbcde2cb77\SOFe\WebConsole\Lib\PollingFieldDesc;
-use libs\_a4e334bbcde2cb77\SOFe\WebConsole\Lib\StringFieldType;
+use libs\_a56d4359543efb82\SOFe\WebConsole\Lib\EventBasedObjectDesc;
+use libs\_a56d4359543efb82\SOFe\WebConsole\Lib\ImmutableFieldDesc;
+use libs\_a56d4359543efb82\SOFe\WebConsole\Lib\IntFieldType;
+use libs\_a56d4359543efb82\SOFe\WebConsole\Lib\PollingFieldDesc;
+use libs\_a56d4359543efb82\SOFe\WebConsole\Lib\StringFieldType;
 
 
 /**
