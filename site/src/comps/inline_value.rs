@@ -55,6 +55,20 @@ pub fn InlineDisplay(props: &Props) -> Html {
                     Some(option) => { + props.i18n.disp(&option.i18n); }
                 }
             }
+            api::FieldType::Nullable { item } => {
+                match &props.value {
+                    serde_json::Value::Null => {
+                        span(class = "has-text-weight-light icon mdi mdi-null");
+                    }
+                    _ => {
+                        InlineDisplay(
+                            i18n = props.i18n.clone(),
+                            value = props.value.clone(),
+                            ty = (&**item).clone(),
+                        );
+                    }
+                }
+            }
             _ => { +"TODO"; }
         }
     }

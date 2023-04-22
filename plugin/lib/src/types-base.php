@@ -10,6 +10,8 @@ use SOFe\WebConsole\Api\ObjectDef;
 
 use function array_map;
 
+// This file contains base field types that reflect webapp capabilities.
+
 // Field types are defined in the `lib` package instead of `api`
 // because implementations of `FieldType` may change or add,
 // subject to new field types supported by the web frontend or other clients.
@@ -34,6 +36,9 @@ final class StringFieldType implements FieldType {
  * @implements FieldType<int>
  */
 final class IntFieldType implements FieldType {
+    /**
+     * Min and max bounds are both inclusive.
+     */
     public function __construct(
         public bool $isTimestamp = false,
         public ?int $min = null,
@@ -64,6 +69,9 @@ final class IntFieldType implements FieldType {
  * @implements FieldType<float>
  */
 final class FloatFieldType implements FieldType {
+    /**
+     * Min and max bounds are both inclusive.
+     */
     public function __construct(
         public bool $isTimestamp = false,
         public ?float $min = null,
@@ -289,12 +297,5 @@ final class CompoundSubfield {
             "name" => $this->nameI18nKey,
             "type" => $this->valueType->serializeType(),
         ];
-    }
-
-    /**
-     * @param ParentT $value
-     */
-    public function serializeParentValue($value) : mixed {
-        return $value;
     }
 }
