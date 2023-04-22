@@ -113,7 +113,8 @@ jobs:
               autoload,
               authors,
               license,
-            } +  if has("x-virion") then {"x-virion"} else null end' >/tmp/composer-stage/composer.json
+              extra,
+            }' >/tmp/composer-stage/composer.json
       - uses: actions/checkout@v3
         with:
           repository: SOF3/webconsole-${{matrix.module}}

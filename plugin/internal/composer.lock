@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9e79834aa901f18b8f5f97ab9986b139",
+    "content-hash": "816f62ba6edb88909fddb98e7601ea41",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -779,16 +779,16 @@
         },
         {
             "name": "pocketmine/pocketmine-mp",
-            "version": "4.19.2",
+            "version": "4.19.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/PocketMine-MP.git",
-                "reference": "a534ac759ab1d13c50de8f5728ed28612a6dd019"
+                "reference": "11e34b3e5cdab7639031d8af53aeacf0242ab487"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/PocketMine-MP/zipball/a534ac759ab1d13c50de8f5728ed28612a6dd019",
-                "reference": "a534ac759ab1d13c50de8f5728ed28612a6dd019",
+                "url": "https://api.github.com/repos/pmmp/PocketMine-MP/zipball/11e34b3e5cdab7639031d8af53aeacf0242ab487",
+                "reference": "11e34b3e5cdab7639031d8af53aeacf0242ab487",
                 "shasum": ""
             },
             "require": {
@@ -865,7 +865,7 @@
             "homepage": "https://pmmp.io",
             "support": {
                 "issues": "https://github.com/pmmp/PocketMine-MP/issues",
-                "source": "https://github.com/pmmp/PocketMine-MP/tree/4.19.2"
+                "source": "https://github.com/pmmp/PocketMine-MP/tree/4.19.3"
             },
             "funding": [
                 {
@@ -877,7 +877,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2023-04-14T17:43:41+00:00"
+            "time": "2023-04-21T14:53:02+00:00"
         },
         {
             "name": "pocketmine/raklib",
@@ -1098,12 +1098,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ramsey/uuid.git",
-                "reference": "60a4c63ab724854332900504274f6150ff26d286"
+                "reference": "2916d00d2c063cf528d267a60774ada0dfaf20c8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ramsey/uuid/zipball/60a4c63ab724854332900504274f6150ff26d286",
-                "reference": "60a4c63ab724854332900504274f6150ff26d286",
+                "url": "https://api.github.com/repos/ramsey/uuid/zipball/2916d00d2c063cf528d267a60774ada0dfaf20c8",
+                "reference": "2916d00d2c063cf528d267a60774ada0dfaf20c8",
                 "shasum": ""
             },
             "require": {
@@ -1171,7 +1171,7 @@
             ],
             "support": {
                 "issues": "https://github.com/ramsey/uuid/issues",
-                "source": "https://github.com/ramsey/uuid/tree/4.7.4"
+                "source": "https://github.com/ramsey/uuid/tree/4.x"
             },
             "funding": [
                 {
@@ -1183,20 +1183,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-15T23:01:58+00:00"
+            "time": "2023-04-17T22:02:26+00:00"
         },
         {
             "name": "sof3/await-generator",
-            "version": "dev-pubsub-topic",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SOF3/await-generator.git",
-                "reference": "2c1c6bb3b644b1de8bc8674f272376b7d34af958"
+                "reference": "9e07d5a09efbb1bfea5a25a19a538ead9c2443d4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SOF3/await-generator/zipball/2c1c6bb3b644b1de8bc8674f272376b7d34af958",
-                "reference": "2c1c6bb3b644b1de8bc8674f272376b7d34af958",
+                "url": "https://api.github.com/repos/SOF3/await-generator/zipball/9e07d5a09efbb1bfea5a25a19a538ead9c2443d4",
+                "reference": "9e07d5a09efbb1bfea5a25a19a538ead9c2443d4",
                 "shasum": ""
             },
             "require": {
@@ -1209,7 +1209,14 @@
                 "phpstan/phpstan": "^0.12.84",
                 "phpunit/phpunit": "^9"
             },
+            "default-branch": true,
             "type": "library",
+            "extra": {
+                "virion": {
+                    "spec": "3.0",
+                    "namespace-root": "SOFe\\AwaitGenerator"
+                }
+            },
             "autoload": {
                 "psr-0": {
                     "SOFe\\AwaitGenerator\\": "await-generator/src/"
@@ -1228,9 +1235,9 @@
             "description": "Use async/await in PHP using generators",
             "support": {
                 "issues": "https://github.com/SOF3/await-generator/issues",
-                "source": "https://github.com/SOF3/await-generator/tree/pubsub-topic"
+                "source": "https://github.com/SOF3/await-generator/tree/master"
             },
-            "time": "2023-04-16T06:06:40+00:00"
+            "time": "2023-04-22T05:47:40+00:00"
         },
         {
             "name": "sof3/webconsole-api",
@@ -1238,11 +1245,11 @@
             "dist": {
                 "type": "path",
                 "url": "../api",
-                "reference": "15001d182c631d1b83f14033c52c8d847e3ac16b"
+                "reference": "dd1801e6fbd0bdb76e5e45abc682f8e565214332"
             },
             "require": {
                 "pocketmine/pocketmine-mp": "^4.13.0",
-                "sof3/await-generator": "dev-pubsub-topic"
+                "sof3/await-generator": "dev-master"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.4",
@@ -1274,11 +1281,11 @@
             "dist": {
                 "type": "path",
                 "url": "../lib",
-                "reference": "6d3bded59d8575674c6b2e2b3249e668fb92d5fd"
+                "reference": "58b58fad38d638047c1e3d5c205e99e4154cbb34"
             },
             "require": {
                 "pocketmine/pocketmine-mp": "^4.13.0",
-                "sof3/await-generator": "dev-pubsub-topic",
+                "sof3/await-generator": "dev-master",
                 "sof3/webconsole-api": "*"
             },
             "require-dev": {
@@ -1287,6 +1294,12 @@
                 "phpunit/phpunit": "^9.5"
             },
             "type": "library",
+            "extra": {
+                "virion": {
+                    "spec": "3.0",
+                    "namespace-root": "SOFe\\WebConsole\\Lib"
+                }
+            },
             "autoload": {
                 "classmap": [
                     "src"
@@ -1312,12 +1325,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/filesystem.git",
-                "reference": "e75960b1bbfd2b8c9e483e0d74811d555ca3de9f"
+                "reference": "b2f79d86cd9e7de0fff6d03baa80eaed7a5f38b5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/filesystem/zipball/e75960b1bbfd2b8c9e483e0d74811d555ca3de9f",
-                "reference": "e75960b1bbfd2b8c9e483e0d74811d555ca3de9f",
+                "url": "https://api.github.com/repos/symfony/filesystem/zipball/b2f79d86cd9e7de0fff6d03baa80eaed7a5f38b5",
+                "reference": "b2f79d86cd9e7de0fff6d03baa80eaed7a5f38b5",
                 "shasum": ""
             },
             "require": {
@@ -1368,7 +1381,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-02-14T08:03:56+00:00"
+            "time": "2023-03-02T11:38:35+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -2516,12 +2529,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "519d631b94dbbae0d9cc24935a5fcf56ddc9e21b"
+                "reference": "fa4868e3f0750a71a6bccb8b4f0bee352a2420f8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/519d631b94dbbae0d9cc24935a5fcf56ddc9e21b",
-                "reference": "519d631b94dbbae0d9cc24935a5fcf56ddc9e21b",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/fa4868e3f0750a71a6bccb8b4f0bee352a2420f8",
+                "reference": "fa4868e3f0750a71a6bccb8b4f0bee352a2420f8",
                 "shasum": ""
             },
             "require": {
@@ -2571,7 +2584,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-14T17:17:51+00:00"
+            "time": "2023-04-22T06:30:08+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -4176,12 +4189,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/SOF3/pharynx.git",
-                "reference": "5e7fb9ff08ed7992aa0d88b1ea4fc561a12de948"
+                "reference": "a42afb5e998769ea95ae5808ec25e459b2e3a6e6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SOF3/pharynx/zipball/5e7fb9ff08ed7992aa0d88b1ea4fc561a12de948",
-                "reference": "5e7fb9ff08ed7992aa0d88b1ea4fc561a12de948",
+                "url": "https://api.github.com/repos/SOF3/pharynx/zipball/a42afb5e998769ea95ae5808ec25e459b2e3a6e6",
+                "reference": "a42afb5e998769ea95ae5808ec25e459b2e3a6e6",
                 "shasum": ""
             },
             "require": {
@@ -4215,7 +4228,7 @@
                 "issues": "https://github.com/SOF3/pharynx/issues",
                 "source": "https://github.com/SOF3/pharynx/tree/composer-autoarg"
             },
-            "time": "2023-04-08T09:41:39+00:00"
+            "time": "2023-04-22T05:43:22+00:00"
         },
         {
             "name": "symfony/console",
@@ -4223,12 +4236,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/console.git",
-                "reference": "4fabdd5541927ce0d3f593616a798148192281c3"
+                "reference": "359e24306fe5a28d72e010c075319517c69fbf72"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/console/zipball/4fabdd5541927ce0d3f593616a798148192281c3",
-                "reference": "4fabdd5541927ce0d3f593616a798148192281c3",
+                "url": "https://api.github.com/repos/symfony/console/zipball/359e24306fe5a28d72e010c075319517c69fbf72",
+                "reference": "359e24306fe5a28d72e010c075319517c69fbf72",
                 "shasum": ""
             },
             "require": {
@@ -4256,12 +4269,6 @@
                 "symfony/lock": "^5.4|^6.0",
                 "symfony/process": "^5.4|^6.0",
                 "symfony/var-dumper": "^5.4|^6.0"
-            },
-            "suggest": {
-                "psr/log": "For using the console logger",
-                "symfony/event-dispatcher": "",
-                "symfony/lock": "",
-                "symfony/process": ""
             },
             "type": "library",
             "autoload": {
@@ -4311,7 +4318,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-14T16:25:38+00:00"
+            "time": "2023-04-21T14:41:17+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
@@ -4387,12 +4394,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/event-dispatcher.git",
-                "reference": "3aa523704d095e4dffe7ec8d6a8b212f793ea2ad"
+                "reference": "3af8ac1a3f98f6dbc55e10ae59c9e44bfc38dfaa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/3aa523704d095e4dffe7ec8d6a8b212f793ea2ad",
-                "reference": "3aa523704d095e4dffe7ec8d6a8b212f793ea2ad",
+                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/3af8ac1a3f98f6dbc55e10ae59c9e44bfc38dfaa",
+                "reference": "3af8ac1a3f98f6dbc55e10ae59c9e44bfc38dfaa",
                 "shasum": ""
             },
             "require": {
@@ -4416,10 +4423,6 @@
                 "symfony/http-foundation": "^5.4|^6.0",
                 "symfony/service-contracts": "^2.5|^3",
                 "symfony/stopwatch": "^5.4|^6.0"
-            },
-            "suggest": {
-                "symfony/dependency-injection": "",
-                "symfony/http-kernel": ""
             },
             "type": "library",
             "autoload": {
@@ -4463,7 +4466,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-03-20T16:06:12+00:00"
+            "time": "2023-04-21T14:41:17+00:00"
         },
         {
             "name": "symfony/event-dispatcher-contracts",
@@ -4929,12 +4932,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/process.git",
-                "reference": "32ac96fb0c7ae1194c9e660701e73d6868469bba"
+                "reference": "198ae32e3c33793e4c029a4dd4b5be4be26bae8a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/process/zipball/32ac96fb0c7ae1194c9e660701e73d6868469bba",
-                "reference": "32ac96fb0c7ae1194c9e660701e73d6868469bba",
+                "url": "https://api.github.com/repos/symfony/process/zipball/198ae32e3c33793e4c029a4dd4b5be4be26bae8a",
+                "reference": "198ae32e3c33793e4c029a4dd4b5be4be26bae8a",
                 "shasum": ""
             },
             "require": {
@@ -4982,7 +4985,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-02T01:25:41+00:00"
+            "time": "2023-04-18T13:59:59+00:00"
         },
         {
             "name": "symfony/service-contracts",
@@ -5076,12 +5079,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/stopwatch.git",
-                "reference": "f7fa451783b748e7b5942b9afe889b8df062e935"
+                "reference": "fc47f1015ec80927ff64ba9094dfe8b9d48fe9f2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/stopwatch/zipball/f7fa451783b748e7b5942b9afe889b8df062e935",
-                "reference": "f7fa451783b748e7b5942b9afe889b8df062e935",
+                "url": "https://api.github.com/repos/symfony/stopwatch/zipball/fc47f1015ec80927ff64ba9094dfe8b9d48fe9f2",
+                "reference": "fc47f1015ec80927ff64ba9094dfe8b9d48fe9f2",
                 "shasum": ""
             },
             "require": {
@@ -5130,7 +5133,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-02-14T09:04:20+00:00"
+            "time": "2023-02-16T10:14:28+00:00"
         },
         {
             "name": "symfony/string",

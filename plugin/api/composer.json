@@ -2,7 +2,7 @@
     "name": "sof3/webconsole-api",
     "type": "provided",
     "require": {
-        "sof3/await-generator": "dev-pubsub-topic",
+        "sof3/await-generator": "dev-master",
         "pocketmine/pocketmine-mp": "^4.13.0"
     },
     "require-dev": {

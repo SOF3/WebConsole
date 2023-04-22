@@ -2,7 +2,7 @@
     "name": "sof3/webconsole-internal",
     "type": "pocketmine-plugin",
     "require": {
-        "sof3/await-generator": "dev-pubsub-topic",
+        "sof3/await-generator": "dev-master",
         "sof3/webconsole-lib": "*",
         "sof3/webconsole-api": "*",
         "pocketmine/pocketmine-mp": "^4.13.0",

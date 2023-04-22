@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9bd80f01b5b137840a54afe31a410ee7",
+    "content-hash": "97cd0c24fbce2776ec8eb4258d62b1db",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -779,16 +779,16 @@
         },
         {
             "name": "pocketmine/pocketmine-mp",
-            "version": "4.19.2",
+            "version": "4.19.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pmmp/PocketMine-MP.git",
-                "reference": "a534ac759ab1d13c50de8f5728ed28612a6dd019"
+                "reference": "11e34b3e5cdab7639031d8af53aeacf0242ab487"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/PocketMine-MP/zipball/a534ac759ab1d13c50de8f5728ed28612a6dd019",
-                "reference": "a534ac759ab1d13c50de8f5728ed28612a6dd019",
+                "url": "https://api.github.com/repos/pmmp/PocketMine-MP/zipball/11e34b3e5cdab7639031d8af53aeacf0242ab487",
+                "reference": "11e34b3e5cdab7639031d8af53aeacf0242ab487",
                 "shasum": ""
             },
             "require": {
@@ -865,7 +865,7 @@
             "homepage": "https://pmmp.io",
             "support": {
                 "issues": "https://github.com/pmmp/PocketMine-MP/issues",
-                "source": "https://github.com/pmmp/PocketMine-MP/tree/4.19.2"
+                "source": "https://github.com/pmmp/PocketMine-MP/tree/4.19.3"
             },
             "funding": [
                 {
@@ -877,7 +877,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2023-04-14T17:43:41+00:00"
+            "time": "2023-04-21T14:53:02+00:00"
         },
         {
             "name": "pocketmine/raklib",
@@ -1186,16 +1186,16 @@
         },
         {
             "name": "sof3/await-generator",
-            "version": "dev-pubsub-topic",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SOF3/await-generator.git",
-                "reference": "2c1c6bb3b644b1de8bc8674f272376b7d34af958"
+                "reference": "9e07d5a09efbb1bfea5a25a19a538ead9c2443d4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SOF3/await-generator/zipball/2c1c6bb3b644b1de8bc8674f272376b7d34af958",
-                "reference": "2c1c6bb3b644b1de8bc8674f272376b7d34af958",
+                "url": "https://api.github.com/repos/SOF3/await-generator/zipball/9e07d5a09efbb1bfea5a25a19a538ead9c2443d4",
+                "reference": "9e07d5a09efbb1bfea5a25a19a538ead9c2443d4",
                 "shasum": ""
             },
             "require": {
@@ -1208,7 +1208,14 @@
                 "phpstan/phpstan": "^0.12.84",
                 "phpunit/phpunit": "^9"
             },
+            "default-branch": true,
             "type": "library",
+            "extra": {
+                "virion": {
+                    "spec": "3.0",
+                    "namespace-root": "SOFe\\AwaitGenerator"
+                }
+            },
             "autoload": {
                 "psr-0": {
                     "SOFe\\AwaitGenerator\\": "await-generator/src/"
@@ -1227,9 +1234,9 @@
             "description": "Use async/await in PHP using generators",
             "support": {
                 "issues": "https://github.com/SOF3/await-generator/issues",
-                "source": "https://github.com/SOF3/await-generator/tree/pubsub-topic"
+                "source": "https://github.com/SOF3/await-generator/tree/master"
             },
-            "time": "2023-04-16T06:06:40+00:00"
+            "time": "2023-04-22T05:47:40+00:00"
         },
         {
             "name": "symfony/filesystem",
@@ -2419,16 +2426,16 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "1.10.13",
+            "version": "1.10.14",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "f07bf8c6980b81bf9e49d44bd0caf2e737614a70"
+                "reference": "d232901b09e67538e5c86a724be841bea5768a7c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/f07bf8c6980b81bf9e49d44bd0caf2e737614a70",
-                "reference": "f07bf8c6980b81bf9e49d44bd0caf2e737614a70",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/d232901b09e67538e5c86a724be841bea5768a7c",
+                "reference": "d232901b09e67538e5c86a724be841bea5768a7c",
                 "shasum": ""
             },
             "require": {
@@ -2477,7 +2484,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-12T19:29:52+00:00"
+            "time": "2023-04-19T13:47:27+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
