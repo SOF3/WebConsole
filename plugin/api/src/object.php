@@ -39,8 +39,12 @@ final class ObjectDef {
     ) {
     }
 
+    public static function idOf(string $group, string $kind) : string {
+        return sprintf("%s/%s", $group, $kind);
+    }
+
     public function id() : string {
-        return sprintf("%s/%s", $this->group, $this->kind);
+        return self::idOf($this->group, $this->kind);
     }
 
     /**

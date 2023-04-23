@@ -7,6 +7,8 @@ use crate::i18n::I18n;
 
 fn round(number: f64) -> f64 { (number * 10.).round() / 10. }
 
+const LIST_DISPLAY_LIMIT: usize = 3;
+
 #[function_component]
 pub fn InlineDisplay(props: &Props) -> Html {
     defy! {
@@ -14,7 +16,7 @@ pub fn InlineDisplay(props: &Props) -> Html {
             api::FieldType::String {} => {
                 match &props.value {
                     serde_json::Value::String(string) => { + string; }
-                    _ => { + "invalid value"; }
+                    v => { + invalid_type("String", v); }
                 }
             }
             api::FieldType::Int64{ is_timestamp, .. } | api::FieldType::Float64 { is_timestamp, .. } => {
@@ -37,23 +39,24 @@ pub fn InlineDisplay(props: &Props) -> Html {
                                 .unwrap_or_else(|| number.to_string());
                         }
                     }
-                    _ => { + "invalid value"; }
+                    v => { + invalid_type("Number", v); }
                 }
             }
             api::FieldType::Bool {} => {
                 match &props.value {
                     serde_json::Value::Bool(bool) => { + bool; }
-                    _ => { + "invalid value"; }
+                    v => { + invalid_type("Bool", v); }
                 }
             }
             api::FieldType::Enum { options } => {
-                let option = match &props.value {
-                    serde_json::Value::String(string) => options.get(string.as_str()),
-                    _ => None,
-                };
-                match option {
-                    None => { + "invalid value"; }
-                    Some(option) => { + props.i18n.disp(&option.i18n); }
+                match &props.value {
+                    serde_json::Value::String(string) => {
+                        match options.get(string.as_str()) {
+                            Some(option) => { + props.i18n.disp(&option.i18n); }
+                            None => { + "invalid option"; }
+                        }
+                    }
+                    v => { + invalid_type("Bool", v); }
                 }
             }
             api::FieldType::Nullable { item } => {
@@ -89,36 +92,43 @@ pub fn InlineDisplay(props: &Props) -> Html {
                                 + props.i18n.disp_with("base-list-item-count-nested", fluent_args!["count" => array.len()]);
                             }
                         } else {
-                            + props.i18n.disp_with("base-list-item-count-prefix", fluent_args!["count" => array.len()]);
-                            for element in array.iter().take(3) {
-                                InlineDisplay(
-                                    i18n = props.i18n.clone(),
-                                    value = element.clone(),
-                                    ty = (&**item).clone(),
-                                    nested = true,
-                                );
+                            for element in array.iter().take(LIST_DISPLAY_LIMIT) {
+                                div(class = "is-inline-block mx-1") {
+                                    InlineDisplay(
+                                        i18n = props.i18n.clone(),
+                                        value = element.clone(),
+                                        ty = (&**item).clone(),
+                                        nested = true,
+                                    );
+                                }
+                            }
+
+                            if array.len() > LIST_DISPLAY_LIMIT {
+                                span(class = "tag is-info") {
+                                    + props.i18n.disp_with("base-list-item-count-remainder", fluent_args!["count" => array.len() - LIST_DISPLAY_LIMIT]);
+                                }
                             }
                         }
                     }
-                    _ => { + "invalid value"; }
+                    v => { + invalid_type("List", v); }
                 }
             }
             api::FieldType::Compound { fields } => {
                 let map = match &props.value {
-                    serde_json::Value::Null => Some(serde_json::Map::default()),
-                    serde_json::Value::Array(array) if array.is_empty() => Some(serde_json::Map::default()),
-                    serde_json::Value::Object(map) if map.is_empty() => Some(serde_json::Map::default()),
-                    serde_json::Value::Object(map) => Some(map.clone()),
-                    _ => None,
+                    serde_json::Value::Null => Ok(serde_json::Map::default()),
+                    serde_json::Value::Array(array) if array.is_empty() => Ok(serde_json::Map::default()),
+                    serde_json::Value::Object(map) if map.is_empty() => Ok(serde_json::Map::default()),
+                    serde_json::Value::Object(map) => Ok(map.clone()),
+                    v => Err(v),
                 };
 
                 match map {
-                    Some(map) if map.is_empty() => {
+                    Ok(map) if map.is_empty() => {
                         span(class = "is-italic has-text-weight-light") {
                             + props.i18n.disp("base-compound-empty");
                         }
                     }
-                    Some(map) => {
+                    Ok(map) => {
                         if props.nested {
                             + "{\u{2026}}";
                         } else {
@@ -126,30 +136,50 @@ pub fn InlineDisplay(props: &Props) -> Html {
                                 span(class = "tag is-info is-light") {
                                     + props.i18n.disp(&field.name);
                                 }
-                                InlineDisplay(
-                                    i18n = props.i18n.clone(),
-                                    value = map.get(field.key.as_str()).cloned().unwrap_or(serde_json::Value::Null),
-                                    ty = field.ty.clone(),
-                                    nested = true,
-                                );
+                                div(class = "is-inline-block mr-1") {
+                                    InlineDisplay(
+                                        i18n = props.i18n.clone(),
+                                        value = map.get(field.key.as_str()).cloned().unwrap_or(serde_json::Value::Null),
+                                        ty = field.ty.clone(),
+                                        nested = true,
+                                    );
+                                }
                             }
                         }
                     }
-                    None => { + "invalid value"; }
+                    Err(v) => { + invalid_type("Compound", v); }
                 }
             }
             api::FieldType::Object { gk } => {
                 match &props.value {
                     serde_json::Value::String(name) => {
-                        a(
-                            href = format!("/{}/{}/{}", &gk.group, &gk.kind, name),
-                        ) {
-                            + name;
+                        span(class = "tag is-link is-light") {
+                            a(
+                                href = format!("/{}/{}/{}", &gk.group, &gk.kind, name),
+                            ) {
+                                + name;
+                            }
                         }
                     }
-                    _ => { + "invalid value"; }
+                    v => { + invalid_type("String", v); }
                 }
             }
+        }
+    }
+}
+
+fn invalid_type(expect: &str, got: &serde_json::Value) -> Html {
+    let got_ty = match got {
+        serde_json::Value::Null => "Null",
+        serde_json::Value::Bool(..) => "Bool",
+        serde_json::Value::Number(..) => "Number",
+        serde_json::Value::String(..) => "String",
+        serde_json::Value::Array(..) => "Array",
+        serde_json::Value::Object(..) => "Object",
+    };
+    defy! {
+        span(class = "has-text-danger") {
+            + format!("expected {expect}, got {got_ty}");
         }
     }
 }

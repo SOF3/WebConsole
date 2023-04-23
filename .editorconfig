@@ -27,3 +27,7 @@ indent_size = 2
 [*.sass]
 indent_style = space
 indent_size = 2
+
+[*.ftl]
+indent_style = space
+indent_size = 4

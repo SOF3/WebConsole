@@ -36,6 +36,13 @@ final class Registry {
     }
 
     /**
+     * @return ?ObjectDef<mixed>
+     */
+    public function getObjectDef(string $group, string $kind) : ?ObjectDef {
+        return $this->objectKinds[ObjectDef::idOf($group, $kind)] ?? null;
+    }
+
+    /**
      * @param FieldDef<mixed, mixed> $def
      */
     public function registerField(FieldDef $def) : void {

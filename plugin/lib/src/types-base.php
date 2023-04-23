@@ -215,7 +215,7 @@ final class NullableFieldType implements FieldType {
 
 /**
  * @template T
- * @implements FieldType<T[]>
+ * @implements FieldType<list<T>>
  */
 final class ListFieldType implements FieldType {
     /**
@@ -234,7 +234,11 @@ final class ListFieldType implements FieldType {
     }
 
     public function serializeValue($value) : mixed {
-        return array_map(fn($item) => $this->itemType->serializeValue($item), $value);
+        $output = [];
+        foreach ($value as $item) {
+            $output[] = $this->itemType->serializeValue($item);
+        }
+        return $output;
     }
 }
 

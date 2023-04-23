@@ -169,16 +169,17 @@ impl Component for ObjectList {
                                             for &field in &fields {
                                                 let value = util::get_json_path(&object.fields, &field.path).cloned().unwrap_or(serde_json::Value::Null);
 
-                                                span(class = "tag is-primary is-light") {
-                                                    + i18n.disp(&field.display_name);
-                                                }
+                                                div(class = "is-inline-block mx-2") {
+                                                    span(class = "tag is-primary is-medium mr-1") {
+                                                        + i18n.disp(&field.display_name);
+                                                    }
 
-                                                comps::InlineDisplay(
-                                                    i18n = i18n.clone(),
-                                                    value = value.clone(),
-                                                    ty = field.ty.clone(),
+                                                    comps::InlineDisplay(
+                                                        i18n = i18n.clone(),
+                                                        value = value.clone(),
+                                                        ty = field.ty.clone(),
                                                     );
-                                                + " ";
+                                                }
                                             }
                                         }
                                     }

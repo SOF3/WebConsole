@@ -18,8 +18,8 @@ final class Group {
             displayPriority: 0,
         ));
 
+        Logging::register($plugin, $registry);
         Players::register($plugin, $registry);
         Worlds::register($plugin, $registry);
-        Logging::register($plugin, $registry);
     }
 }

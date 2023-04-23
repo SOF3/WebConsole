@@ -5,6 +5,7 @@ main-player-entity-position = position
 main-world-kind = Loaded worlds
 main-world-display-name = display name
 main-world-time = world time
+main-world-players = players
 main-log-message-kind = Server logs
 main-log-message-time = time
 main-log-message-verbosity = verbosity
