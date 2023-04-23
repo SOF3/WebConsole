@@ -44,6 +44,10 @@ impl From<String> for RcStr {
     fn from(value: String) -> Self { Self(Rc::from(value)) }
 }
 
+impl From<&String> for RcStr {
+    fn from(value: &String) -> Self { Self(Rc::from(value.as_str())) }
+}
+
 impl FromStr for RcStr {
     type Err = Infallible;
     fn from_str(s: &str) -> Result<Self, Self::Err> { Ok(Self(s.into())) }

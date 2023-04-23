@@ -7,11 +7,12 @@ use futures::channel::oneshot;
 use futures::StreamExt;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yew_router::prelude::*;
 
 use super::DisplayMode;
 use crate::i18n::I18n;
 use crate::util::{self, Grc, RcStr};
-use crate::{api, comps};
+use crate::{api, comps, Route};
 
 pub struct ObjectList {
     objects:     BTreeMap<String, api::Object>,
@@ -157,8 +158,10 @@ impl Component for ObjectList {
                             div(class = "card object-thumbnail") {
                                 if !def.metadata.hide_name {
                                     header(class = "card-header") {
-                                        p(class = "card-header-title") {
-                                            + &object.name;
+                                        Link<Route>(to = Route::Info { group: def.id.group.clone(), kind: def.id.kind.clone(), name: (&object.name).into() }) {
+                                            p(class = "card-header-title") {
+                                                + &object.name;
+                                            }
                                         }
                                     }
                                 }
@@ -203,21 +206,26 @@ impl Component for ObjectList {
                         }
                         tbody {
                             for object in iter_map_order(&self.objects, def.metadata.desc_name) {
-                                tr {
-                                    if !def.metadata.hide_name {
-                                        th {
-                                            + &object.name;
+                                Link<Route>(
+                                    classes = "undecorate-hyperlink",
+                                    to = Route::Info { group: def.id.group.clone(), kind: def.id.kind.clone(), name: (&object.name).into() },
+                                ) {
+                                    tr {
+                                        if !def.metadata.hide_name {
+                                            th {
+                                                + &object.name;
+                                            }
                                         }
-                                    }
 
-                                    for field in &fields {
-                                        td {
-                                            if let Some(value) = util::get_json_path(&object.fields, &field.path) {
-                                                comps::InlineDisplay(
-                                                    i18n = i18n.clone(),
-                                                    value = value.clone(),
-                                                    ty = field.ty.clone(),
-                                                );
+                                        for field in &fields {
+                                            td {
+                                                if let Some(value) = util::get_json_path(&object.fields, &field.path) {
+                                                    comps::InlineDisplay(
+                                                        i18n = i18n.clone(),
+                                                        value = value.clone(),
+                                                        ty = field.ty.clone(),
+                                                    );
+                                                }
                                             }
                                         }
                                     }

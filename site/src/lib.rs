@@ -122,6 +122,8 @@ fn fallback(host: RcStr, set_user_host: Callback<RcStr>) -> Html {
 enum Route {
     #[at("/:group/:kind")]
     List { group: RcStr, kind: RcStr },
+    #[at("/:group/:kind/:name")]
+    Info { group: RcStr, kind: RcStr, name: RcStr },
     #[at("/")]
     Home,
 }
@@ -131,6 +133,9 @@ fn switch(route: Route, api: Grc<api::Client>, i18n: I18n, discovery: Grc<api::D
         match route {
             Route::List { group, kind } => {
                 pages::list::Comp(api, i18n, discovery, group, kind);
+            }
+            Route::Info { group, kind, name } => {
+                pages::info::Comp(api, i18n, discovery, group, kind, name);
             }
             Route::Home => {
                 pages::home::Comp(i18n);

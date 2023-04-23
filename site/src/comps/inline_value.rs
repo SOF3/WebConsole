@@ -1,9 +1,10 @@
 use defy::defy;
 use fluent::fluent_args;
 use yew::prelude::*;
+use yew_router::prelude::*;
 
-use crate::api;
 use crate::i18n::I18n;
+use crate::{api, Route};
 
 fn round(number: f64) -> f64 { (number * 10.).round() / 10. }
 
@@ -154,9 +155,7 @@ pub fn InlineDisplay(props: &Props) -> Html {
                 match &props.value {
                     serde_json::Value::String(name) => {
                         span(class = "tag is-link is-light") {
-                            a(
-                                href = format!("/{}/{}/{}", &gk.group, &gk.kind, name),
-                            ) {
+                            Link<Route>(to = Route::Info { group: gk.group.clone(), kind: gk.kind.clone(), name: name.into() }) {
                                 + name;
                             }
                         }
