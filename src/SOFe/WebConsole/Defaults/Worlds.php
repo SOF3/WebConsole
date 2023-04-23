@@ -4,19 +4,27 @@ declare(strict_types=1);
 
 namespace SOFe\WebConsole\Defaults;
 
+use pocketmine\event\entity\EntityTeleportEvent;
+use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\event\world\WorldLoadEvent;
 use pocketmine\event\world\WorldUnloadEvent;
+use pocketmine\player\Player;
 use pocketmine\world\World;
-use libs\_cb07bb7a956d14fd\SOFe\AwaitGenerator\GeneratorUtil;
+use RuntimeException;
+use libs\_ea943571e36f3c14\SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
 use SOFe\WebConsole\Internal\Main;
-use libs\_cb07bb7a956d14fd\SOFe\WebConsole\Lib\EventBasedObjectDesc;
-use libs\_cb07bb7a956d14fd\SOFe\WebConsole\Lib\ImmutableFieldDesc;
-use libs\_cb07bb7a956d14fd\SOFe\WebConsole\Lib\IntFieldType;
-use libs\_cb07bb7a956d14fd\SOFe\WebConsole\Lib\PollingFieldDesc;
-use libs\_cb07bb7a956d14fd\SOFe\WebConsole\Lib\StringFieldType;
+use libs\_ea943571e36f3c14\SOFe\WebConsole\Lib\EventBasedFieldDesc;
+use libs\_ea943571e36f3c14\SOFe\WebConsole\Lib\EventBasedObjectDesc;
+use libs\_ea943571e36f3c14\SOFe\WebConsole\Lib\ImmutableFieldDesc;
+use libs\_ea943571e36f3c14\SOFe\WebConsole\Lib\IntFieldType;
+use libs\_ea943571e36f3c14\SOFe\WebConsole\Lib\ListFieldType;
+use libs\_ea943571e36f3c14\SOFe\WebConsole\Lib\ObjectRefFieldType;
+use libs\_ea943571e36f3c14\SOFe\WebConsole\Lib\PollingFieldDesc;
+use libs\_ea943571e36f3c14\SOFe\WebConsole\Lib\StringFieldType;
 
 
 /**
@@ -65,6 +73,34 @@ final class Worlds {
                 plugin: $plugin,
                 getter: fn(World $world) => GeneratorUtil::empty($world->getTimeOfDay()),
                 periodTicks: 20,
+            ),
+        ));
+
+        $playerObjectDef = $registry->getObjectDef(Group::ID, Players::KIND) ?? throw new RuntimeException("incorrect startup order");
+        /** @var ListFieldType<Player> $playersFieldType */
+        $playersFieldType = new ListFieldType(new ObjectRefFieldType($playerObjectDef));
+        $registry->registerField(new FieldDef(
+            objectGroup: Group::ID,
+            objectKind: self::KIND,
+            path: "players",
+            displayName: "main-world-players",
+            type: $playersFieldType,
+            metadata: [],
+            desc: new EventBasedFieldDesc(
+                plugin: $plugin,
+                events: [
+                    PlayerJoinEvent::class,
+                    PlayerQuitEvent::class,
+                    EntityTeleportEvent::class,
+                ],
+                getter: fn(World $world) => GeneratorUtil::empty($world->getPlayers()),
+                testEvent: function(PlayerJoinEvent|PlayerQuitEvent|EntityTeleportEvent $event, World $world) {
+                    return match (true) {
+                        $event instanceof PlayerJoinEvent => $event->getPlayer()->getWorld() === $world,
+                        $event instanceof PlayerQuitEvent => $event->getPlayer()->getWorld() === $world,
+                        $event instanceof EntityTeleportEvent => $event->getEntity()->getWorld() === $world,
+                    };
+                },
             ),
         ));
     }

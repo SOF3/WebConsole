@@ -7,6 +7,9 @@ base-display-card = Cards
 base-display-table = Table
 base-name = Name
 base-list-empty = nil
-base-list-item-count-nested = {$count} items
-base-list-item-count-prefix = [{$count} items]
+base-list-item-count-nested = {$count ->
+    [one] 1 item
+    *[other] {$count} items
+}
+base-list-item-count-remainder = +{$count}
 base-compound-empty = nil

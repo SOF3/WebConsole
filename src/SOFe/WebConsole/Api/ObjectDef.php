@@ -6,7 +6,7 @@ namespace SOFe\WebConsole\Api;
 
 use Exception;
 use Generator;
-use libs\_cb07bb7a956d14fd\SOFe\AwaitGenerator\Traverser;
+use libs\_ea943571e36f3c14\SOFe\AwaitGenerator\Traverser;
 use function sprintf;
 
 
@@ -39,8 +39,12 @@ final class ObjectDef {
     ) {
     }
 
+    public static function idOf(string $group, string $kind) : string {
+        return sprintf("%s/%s", $group, $kind);
+    }
+
     public function id() : string {
-        return sprintf("%s/%s", $this->group, $this->kind);
+        return self::idOf($this->group, $this->kind);
     }
 
     /**
