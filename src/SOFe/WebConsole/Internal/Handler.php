@@ -7,11 +7,11 @@ namespace SOFe\WebConsole\Internal;
 use Closure;
 use Generator;
 use RuntimeException;
-use libs\_6c4285df04e833c0\SOFe\AwaitGenerator\Await;
-use libs\_6c4285df04e833c0\SOFe\AwaitGenerator\Channel;
-use libs\_6c4285df04e833c0\SOFe\AwaitGenerator\Loading;
-use libs\_6c4285df04e833c0\SOFe\AwaitGenerator\PubSub;
-use libs\_6c4285df04e833c0\SOFe\AwaitGenerator\Traverser;
+use libs\_192b30f44185144c\SOFe\AwaitGenerator\Await;
+use libs\_192b30f44185144c\SOFe\AwaitGenerator\Channel;
+use libs\_192b30f44185144c\SOFe\AwaitGenerator\Loading;
+use libs\_192b30f44185144c\SOFe\AwaitGenerator\PubSub;
+use libs\_192b30f44185144c\SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
@@ -81,13 +81,13 @@ final class Handler {
                 $limit = null;
             }
 
-            if ($name === null) {
-                /** @var Closure(string): bool $fieldFilter */
-                $fieldFilter = fn() => true;
-                if (($fields = $request->address->query["fields"] ?? null) !== null) {
-                    $fieldFilter = fn(string $id) => in_array($id, $fields, true);
-                }
+            /** @var Closure(string): bool $fieldFilter */
+            $fieldFilter = fn() => true;
+            if (($fields = $request->address->query["fields"] ?? null) !== null) {
+                $fieldFilter = fn(string $id) => in_array($id, $fields, true);
+            }
 
+            if ($name === null) {
                 if ($isWatch) {
                     return new HttpResponse(
                         "HTTP/1.0",
@@ -97,7 +97,7 @@ final class Handler {
                             "Content-Type" => "text/event-stream; charset=utf-8",
                         ]),
                         Traverser::fromClosure(function() use ($objectDef, $fieldFilter, $limit) {
-                            yield from $this->watch($objectDef, $fieldFilter, $limit);
+                            yield from $this->watchList($objectDef, $fieldFilter, $limit);
                         }),
                     );
                 } else {
@@ -113,6 +113,25 @@ final class Handler {
                     );
                 }
             }
+
+            if ($isWatch) {
+                $identity = yield from $objectDef->desc->get($name);
+                if ($identity === null) {
+                    return $this->notFound();
+                }
+
+                return new HttpResponse(
+                    "HTTP/1.0",
+                    "200 OK",
+                    new HttpHeaders([
+                        "Cache-Control" => "no-cache",
+                        "Content-Type" => "text/event-stream; charset=utf-8",
+                    ]),
+                    Traverser::fromClosure(function() use ($objectDef, $fieldFilter, $identity) {
+                        yield from $this->watchSingle($objectDef, $fieldFilter, $identity);
+                    }),
+                );
+            }
         }
 
         return new HttpResponse("HTTP/1.0", "405 Method Not Allowed", new HttpHeaders, Traverser::fromClosure(function() {
@@ -124,9 +143,42 @@ final class Handler {
      * @template I
      * @param ObjectDef<I> $objectDef
      * @param Closure(string): bool $fieldFilter
+     * @param I $identity
+     */
+    private function watchSingle(ObjectDef $objectDef, Closure $fieldFilter, $identity) : Generator {
+        $channel = new Channel;
+
+        foreach ($objectDef->fields as $field) {
+            if ($fieldFilter($field->path)) {
+                Await::f2c(function() use ($field, $identity, $channel) {
+                    $traverser = $field->desc->watch($identity);
+                    while (yield from $traverser->next($value)) {
+                        $channel->sendWithoutWait([
+                            "event" => "Update",
+                            "field" => $field->path,
+                            "value" => $value,
+                        ]);
+                    }
+                });
+            }
+        }
+
+        while (true) {
+            $message = yield from $channel->receive();
+
+            yield "data: " => Traverser::VALUE;
+            yield $this->jsonEncode($message) => Traverser::VALUE;
+            yield "\n\n" => Traverser::VALUE;
+        }
+    }
+
+    /**
+     * @template I
+     * @param ObjectDef<I> $objectDef
+     * @param Closure(string): bool $fieldFilter
      * @return Generator<mixed, mixed, mixed, void>
      */
-    private function watch(ObjectDef $objectDef, Closure $fieldFilter, ?int $limit) : Generator {
+    private function watchList(ObjectDef $objectDef, Closure $fieldFilter, ?int $limit) : Generator {
         $channel = new Channel;
 
         Await::f2c(function() use ($objectDef, $fieldFilter, $limit, $channel) {
