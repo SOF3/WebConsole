@@ -5,6 +5,8 @@ use crate::api;
 use crate::i18n::I18n;
 use crate::util::Grc;
 
+mod details;
+
 #[function_component]
 pub fn Comp(props: &Props) -> Html {
     let Some(api) = props
@@ -28,9 +30,19 @@ pub fn Comp(props: &Props) -> Html {
     );
 
     defy! {
-        h1 {
+        h1(class = "title") {
             + format!("{gk_display_name} {}", props.name);
         }
+
+        details::Comp(
+            api = props.api.clone(),
+            i18n = props.i18n.clone(),
+            discovery = props.discovery.clone(),
+            def = api.clone(),
+            group = props.group.clone(),
+            kind = props.kind.clone(),
+            name = props.name.clone(),
+        );
     }
 }
 

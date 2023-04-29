@@ -32,10 +32,11 @@ fn run_watch(ctx: &Context<ObjectList>, comp: &mut ObjectList) {
         let kind = props.kind.to_string();
         async move {
             match async {
-                let mut stream = api.watch(group, kind).await.context("watch for objects")?.fuse();
+                let mut stream =
+                    api.watch_list(group, kind).await.context("watch for objects")?.fuse();
 
                 loop {
-                    let event: anyhow::Result<api::ObjectEvent> = futures::select! {
+                    let event: anyhow::Result<api::WatchListEvent> = futures::select! {
                         event = stream.next() => match event {
                             Some(event) => event,
                             None => return Ok(()),
@@ -93,16 +94,16 @@ impl Component for ObjectList {
         match msg {
             ObjectListMsg::Event(Ok(event)) => {
                 match event {
-                    api::ObjectEvent::Clear => {
+                    api::WatchListEvent::Clear => {
                         self.objects.clear();
                     }
-                    api::ObjectEvent::Added { item: object } => {
+                    api::WatchListEvent::Added { item: object } => {
                         self.objects.insert(object.name.clone(), object);
                     }
-                    api::ObjectEvent::Removed { name } => {
+                    api::WatchListEvent::Removed { name } => {
                         self.objects.remove(&*name);
                     }
-                    api::ObjectEvent::FieldUpdate { name, field, value } => {
+                    api::WatchListEvent::FieldUpdate { name, field, value } => {
                         let Some(object) = self.objects.get_mut(&*name) else { return false };
                         if let Err(err) = util::set_json_path(&mut object.fields, &*field, value) {
                             log::warn!("invalid json path: {err:?}");
@@ -240,7 +241,7 @@ impl Component for ObjectList {
 }
 
 pub enum ObjectListMsg {
-    Event(anyhow::Result<api::ObjectEvent>),
+    Event(anyhow::Result<api::WatchListEvent>),
 }
 
 #[derive(Clone, PartialEq, Properties)]

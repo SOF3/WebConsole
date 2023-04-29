@@ -128,24 +128,55 @@ impl Client {
         Ok(objects)
     }
 
-    pub fn watch(
+    pub fn watch_list(
         self: &Rc<Self>,
         group: String,
         kind: String,
-    ) -> impl Future<Output = anyhow::Result<impl Stream<Item = anyhow::Result<ObjectEvent>>>> {
+    ) -> impl Future<Output = anyhow::Result<impl Stream<Item = anyhow::Result<WatchListEvent>>>>
+    {
         let this = self.clone();
-        async move { this.watch_impl(&group, &kind).await }
+        async move { this.watch_list_impl(&group, &kind).await }
     }
-    async fn watch_impl(
+    async fn watch_list_impl(
         &self,
         group: &str,
         kind: &str,
-    ) -> anyhow::Result<impl Stream<Item = anyhow::Result<ObjectEvent>>> {
-        let mut es = EventSource::new(&format!(
-            "{}/{group}/{kind}?watch=true&withExisting=true",
-            &self.host
-        ))
-        .context("instantiate EventSource to watch events")?;
+    ) -> anyhow::Result<impl Stream<Item = anyhow::Result<WatchListEvent>>> {
+        let mut es = EventSource::new(&format!("{}/{group}/{kind}?watch=true", &self.host))
+            .context("instantiate EventSource to watch events")?;
+        let sub = es.subscribe("message").context("subscribe to message events")?;
+
+        let mapped = sub.map(|event| {
+            let (_, event) =
+                event.map_err(|err| anyhow::anyhow!("{err}")).context("read event error")?;
+            let de = serde_json::from_str(
+                &event.data().as_string().context("event data should be string")?,
+            )
+            .context("deserialize event json")?;
+            Ok(de)
+        });
+
+        Ok(StreamWith { stream: mapped, attach: es })
+    }
+
+    pub fn watch_single(
+        self: &Rc<Self>,
+        group: String,
+        kind: String,
+        name: String,
+    ) -> impl Future<Output = anyhow::Result<impl Stream<Item = anyhow::Result<WatchListEvent>>>>
+    {
+        let this = self.clone();
+        async move { this.watch_single_impl(&group, &kind, &name).await }
+    }
+    async fn watch_single_impl(
+        &self,
+        group: &str,
+        kind: &str,
+        name: &str,
+    ) -> anyhow::Result<impl Stream<Item = anyhow::Result<WatchListEvent>>> {
+        let mut es = EventSource::new(&format!("{}/{group}/{kind}/{name}?watch=true", &self.host,))
+            .context("instantiate EventSource to watch events")?;
         let sub = es.subscribe("message").context("subscribe to message events")?;
 
         let mapped = sub.map(|event| {
@@ -354,9 +385,15 @@ pub struct Object {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "event")]
-pub enum ObjectEvent {
+pub enum WatchListEvent {
     Clear,
     Added { item: Object },
     Removed { name: RcStr },
     FieldUpdate { name: RcStr, field: RcStr, value: serde_json::Value },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "event")]
+pub enum WatchSingleEvent {
+    Update { field: RcStr, value: serde_json::Value },
 }
