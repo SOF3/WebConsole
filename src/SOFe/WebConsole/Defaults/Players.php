@@ -10,15 +10,15 @@ use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\player\Player;
-use libs\_192b30f44185144c\SOFe\AwaitGenerator\GeneratorUtil;
+use libs\_37f8d49eb6299cb1\SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
 use SOFe\WebConsole\Internal\Main;
-use libs\_192b30f44185144c\SOFe\WebConsole\Lib\EventBasedFieldDesc;
-use libs\_192b30f44185144c\SOFe\WebConsole\Lib\EventBasedObjectDesc;
-use libs\_192b30f44185144c\SOFe\WebConsole\Lib\FloatFieldType;
-use libs\_192b30f44185144c\SOFe\WebConsole\Lib\Vector3FieldType;
+use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\EventBasedFieldDesc;
+use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\EventBasedObjectDesc;
+use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\FloatFieldType;
+use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\Vector3FieldType;
 
 /**
  * @internal
