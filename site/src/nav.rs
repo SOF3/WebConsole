@@ -11,7 +11,7 @@ use crate::{api, comps, Route};
 pub fn Comp(props: &Props) -> HtmlResult {
     struct GroupApis<'t> {
         group: &'t api::Group,
-        apis:  Vec<&'t api::Desc>,
+        apis:  Vec<&'t api::ObjectDef>,
     }
 
     let mut groups: IndexMap<_, GroupApis> = props

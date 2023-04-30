@@ -1,64 +1,215 @@
 use std::cmp;
 use std::collections::{BTreeMap, HashSet};
+use std::pin::Pin;
+use std::rc::Rc;
 
-use anyhow::Context as _;
+use anyhow::Result;
 use defy::defy;
-use futures::channel::oneshot;
-use futures::StreamExt;
-use wasm_bindgen_futures::spawn_local;
+use futures::stream::FusedStream;
+use futures::{Future, StreamExt};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
 use super::DisplayMode;
+use crate::comps::watch_loader;
 use crate::i18n::I18n;
 use crate::util::{self, Grc, RcStr};
 use crate::{api, comps, Route};
 
-pub struct ObjectList {
-    objects:     BTreeMap<String, api::Object>,
-    err:         Option<String>,
-    shutdown_tx: Option<oneshot::Sender<()>>,
+pub struct ObjectStore {
+    objects: BTreeMap<String, api::Object>,
 }
 
-fn run_watch(ctx: &Context<ObjectList>, comp: &mut ObjectList) {
-    let (shutdown_tx, mut shutdown_rx) = oneshot::channel::<()>();
+impl watch_loader::State for ObjectStore {
+    type Input = ObjectListProps;
+    fn new(_input: &Self::Input) -> Self { Self { objects: BTreeMap::new() } }
 
-    let callback = ctx.link().callback(|event| ObjectListMsg::Event(event));
-    let props = ctx.props();
+    fn reset(&mut self) { self.objects.clear(); }
 
-    spawn_local({
+    type Deps<'t> = api::GroupKind;
+    fn deps<'t>(input: &'t Self::Input) -> Self::Deps<'t> {
+        api::GroupKind {
+            group: RcStr::from(input.group.clone()),
+            kind:  RcStr::from(input.kind.clone()),
+        }
+    }
+
+    type Event = api::WatchListEvent;
+    fn update(&mut self, msg: Self::Event) -> watch_loader::NeedRender {
+        match msg {
+            api::WatchListEvent::Clear => {
+                self.objects.clear();
+                true
+            }
+            api::WatchListEvent::Added { item: object } => {
+                self.objects.insert(object.name.clone(), object);
+                true
+            }
+            api::WatchListEvent::Removed { name } => {
+                self.objects.remove(&*name);
+                true
+            }
+            api::WatchListEvent::FieldUpdate { name, field, value } => {
+                let Some(object) = self.objects.get_mut(&*name) else { return false };
+                if let Err(err) = util::set_json_path(&mut object.fields, &*field, value) {
+                    log::warn!("invalid json path: {err:?}");
+                }
+                true
+            }
+        }
+    }
+
+    fn watch(
+        &self,
+        props: &ObjectListProps,
+    ) -> Pin<
+        Box<dyn Future<Output = Result<Box<dyn FusedStream<Item = Result<Self::Event>> + Unpin>>>>,
+    > {
         let api = props.api.clone();
         let group = props.group.to_string();
         let kind = props.kind.to_string();
-        async move {
-            match async {
-                let mut stream =
-                    api.watch_list(group, kind).await.context("watch for objects")?.fuse();
+        Box::pin(async move {
+            let stream = api.watch_list(group, kind).await?;
+            Ok(Box::new(stream.fuse()) as Box<dyn FusedStream<Item = _> + Unpin + 'static>)
+        })
+    }
+}
 
-                loop {
-                    let event: anyhow::Result<api::WatchListEvent> = futures::select! {
-                        event = stream.next() => match event {
-                            Some(event) => event,
-                            None => return Ok(()),
-                        },
-                        _ = shutdown_rx => return Ok(()),
-                    };
-                    callback.emit(event);
+#[function_component]
+pub fn ObjectList(props: &ObjectListProps) -> Html {
+    let closure = {
+        let props = props.clone();
+
+        move |state: &ObjectStore| {
+            let def = &props.def;
+            let hidden = &props.hidden;
+            let fields = {
+                let mut fields = def
+                    .fields
+                    .values()
+                    .filter(|&field| !hidden.contains(&field.path))
+                    .collect::<Vec<_>>();
+                fields.sort_by_key(|field| {
+                    (cmp::Reverse(field.metadata.display_priority), &field.path)
+                });
+                fields
+            };
+
+            let i18n = &props.i18n;
+            let display_mode = props.display_mode;
+
+            let display = match display_mode {
+                DisplayMode::Cards => display_cards,
+                DisplayMode::Table => display_table,
+            };
+            display(state, def, &fields, i18n)
+        }
+    };
+
+    defy! {
+        watch_loader::Comp<ObjectStore>(
+            input = props.clone(),
+            body = Rc::new(closure) as Rc<dyn Fn(&ObjectStore) -> Html>,
+        );
+    }
+}
+
+fn display_cards(
+    state: &ObjectStore,
+    def: &api::ObjectDef,
+    fields: &[&api::FieldDef],
+    i18n: &I18n,
+) -> Html {
+    defy! {
+        div {
+            for object in iter_map_order(&state.objects, def.metadata.desc_name) {
+                div(class = "card object-thumbnail") {
+                    if !def.metadata.hide_name {
+                        header(class = "card-header") {
+                            Link<Route>(to = Route::Info { group: def.id.group.clone(), kind: def.id.kind.clone(), name: (&object.name).into() }) {
+                                p(class = "card-header-title") {
+                                    + &object.name;
+                                }
+                            }
+                        }
+                    }
+
+                    if !fields.is_empty() {
+                        div(class = "card-content") {
+                            div(class = "content") {
+                                for &field in fields {
+                                    let value = util::get_json_path(&object.fields, &field.path).cloned().unwrap_or(serde_json::Value::Null);
+
+                                    div(class = "is-inline-block mx-2") {
+                                        span(class = "tag is-primary is-medium mr-1") {
+                                            + i18n.disp(&field.display_name);
+                                        }
+
+                                        comps::InlineDisplay(
+                                            i18n = i18n.clone(),
+                                            value = value.clone(),
+                                            ty = field.ty.clone(),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            .await
-            {
-                Ok(()) => (),
-                Err(err) => callback.emit(Err(err)),
+        }
+    }
+}
+
+fn display_table(
+    state: &ObjectStore,
+    def: &api::ObjectDef,
+    fields: &[&api::FieldDef],
+    i18n: &I18n,
+) -> Html {
+    defy! {
+        table(class = "table") {
+            thead {
+                tr {
+                    if !def.metadata.hide_name {
+                        th { + i18n.disp("base-name"); }
+                    }
+
+                    for field in fields {
+                        th { + i18n.disp(&field.display_name); }
+                    }
+                }
+            }
+            tbody {
+                for object in iter_map_order(&state.objects, def.metadata.desc_name) {
+                    Link<Route>(
+                        classes = "undecorate-hyperlink",
+                        to = Route::Info { group: def.id.group.clone(), kind: def.id.kind.clone(), name: (&object.name).into() },
+                    ) {
+                        tr {
+                            if !def.metadata.hide_name {
+                                th {
+                                    + &object.name;
+                                }
+                            }
+
+                            for field in fields {
+                                td {
+                                    if let Some(value) = util::get_json_path(&object.fields, &field.path) {
+                                        comps::InlineDisplay(
+                                            i18n = i18n.clone(),
+                                            value = value.clone(),
+                                            ty = field.ty.clone(),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-    });
-
-    if let Some(old) = comp.shutdown_tx.replace(shutdown_tx) {
-        _ = old.send(());
     }
-
-    comp.objects.clear();
 }
 
 fn iter_map_order(
@@ -72,185 +223,13 @@ fn iter_map_order(
     }
 }
 
-impl Component for ObjectList {
-    type Message = ObjectListMsg;
-    type Properties = ObjectListProps;
-
-    fn create(ctx: &Context<Self>) -> Self {
-        let mut obj = Self { objects: BTreeMap::new(), err: None, shutdown_tx: None };
-
-        run_watch(ctx, &mut obj);
-
-        obj
-    }
-
-    fn destroy(&mut self, _ctx: &Context<Self>) {
-        if let Some(shutdown_tx) = self.shutdown_tx.take() {
-            _ = shutdown_tx.send(());
-        }
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            ObjectListMsg::Event(Ok(event)) => {
-                match event {
-                    api::WatchListEvent::Clear => {
-                        self.objects.clear();
-                    }
-                    api::WatchListEvent::Added { item: object } => {
-                        self.objects.insert(object.name.clone(), object);
-                    }
-                    api::WatchListEvent::Removed { name } => {
-                        self.objects.remove(&*name);
-                    }
-                    api::WatchListEvent::FieldUpdate { name, field, value } => {
-                        let Some(object) = self.objects.get_mut(&*name) else { return false };
-                        if let Err(err) = util::set_json_path(&mut object.fields, &*field, value) {
-                            log::warn!("invalid json path: {err:?}");
-                        }
-                    }
-                }
-                true
-            }
-            ObjectListMsg::Event(Err(err)) => {
-                self.err = Some(format!("{err:?}"));
-                true
-            }
-        }
-    }
-
-    fn changed(&mut self, ctx: &Context<Self>, old_props: &Self::Properties) -> bool {
-        if ctx.props().group != old_props.group || ctx.props().kind != old_props.kind {
-            run_watch(ctx, self);
-        }
-
-        true
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let hidden = &ctx.props().hidden;
-        let def = &ctx.props().def;
-        let mut fields: Vec<_> =
-            def.fields.values().filter(|&field| !hidden.contains(&field.path)).collect();
-        fields.sort_by_key(|field| (cmp::Reverse(field.metadata.display_priority), &field.path));
-
-        let i18n = &ctx.props().i18n;
-
-        defy! {
-            if let Some(err) = &self.err {
-                article(class = "message is-danger") {
-                    div(class = "message-header") {
-                        p {
-                            + "Error";
-                        }
-                    }
-                    div(class = "message-body") {
-                        pre {
-                            + err;
-                        }
-                    }
-                }
-            }
-
-            match ctx.props().display_mode {
-                DisplayMode::Cards => {
-                    div {
-                        for object in iter_map_order(&self.objects, def.metadata.desc_name) {
-                            div(class = "card object-thumbnail") {
-                                if !def.metadata.hide_name {
-                                    header(class = "card-header") {
-                                        Link<Route>(to = Route::Info { group: def.id.group.clone(), kind: def.id.kind.clone(), name: (&object.name).into() }) {
-                                            p(class = "card-header-title") {
-                                                + &object.name;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if !fields.is_empty() {
-                                    div(class = "card-content") {
-                                        div(class = "content") {
-                                            for &field in &fields {
-                                                let value = util::get_json_path(&object.fields, &field.path).cloned().unwrap_or(serde_json::Value::Null);
-
-                                                div(class = "is-inline-block mx-2") {
-                                                    span(class = "tag is-primary is-medium mr-1") {
-                                                        + i18n.disp(&field.display_name);
-                                                    }
-
-                                                    comps::InlineDisplay(
-                                                        i18n = i18n.clone(),
-                                                        value = value.clone(),
-                                                        ty = field.ty.clone(),
-                                                    );
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                DisplayMode::Table => {
-                    table(class = "table") {
-                        thead {
-                            tr {
-                                if !def.metadata.hide_name {
-                                    th { + i18n.disp("base-name"); }
-                                }
-
-                                for field in &fields {
-                                    th { + i18n.disp(&field.display_name); }
-                                }
-                            }
-                        }
-                        tbody {
-                            for object in iter_map_order(&self.objects, def.metadata.desc_name) {
-                                Link<Route>(
-                                    classes = "undecorate-hyperlink",
-                                    to = Route::Info { group: def.id.group.clone(), kind: def.id.kind.clone(), name: (&object.name).into() },
-                                ) {
-                                    tr {
-                                        if !def.metadata.hide_name {
-                                            th {
-                                                + &object.name;
-                                            }
-                                        }
-
-                                        for field in &fields {
-                                            td {
-                                                if let Some(value) = util::get_json_path(&object.fields, &field.path) {
-                                                    comps::InlineDisplay(
-                                                        i18n = i18n.clone(),
-                                                        value = value.clone(),
-                                                        ty = field.ty.clone(),
-                                                    );
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-pub enum ObjectListMsg {
-    Event(anyhow::Result<api::WatchListEvent>),
-}
-
 #[derive(Clone, PartialEq, Properties)]
 pub struct ObjectListProps {
     pub api:          Grc<api::Client>,
     pub i18n:         I18n,
     pub group:        AttrValue,
     pub kind:         AttrValue,
-    pub def:          api::Desc,
+    pub def:          api::ObjectDef,
     pub hidden:       HashSet<RcStr>,
     pub display_mode: DisplayMode,
 }

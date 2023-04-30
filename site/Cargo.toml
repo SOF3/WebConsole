@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.69"
+async-trait = "0.1.68"
 console_error_panic_hook = "0.1.7"
 defy = { version = "0.1.5" }
 fluent = "0.16.0"

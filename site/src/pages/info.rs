@@ -5,11 +5,11 @@ use crate::api;
 use crate::i18n::I18n;
 use crate::util::Grc;
 
-mod details;
+mod loader;
 
 #[function_component]
 pub fn Comp(props: &Props) -> Html {
-    let Some(api) = props
+    let Some(def) = props
         .discovery
         .apis
         .get(&api::GroupKindRef { group: props.group.as_str(), kind: props.kind.as_str() }
@@ -18,7 +18,7 @@ pub fn Comp(props: &Props) -> Html {
         return defy! { + "Error: unknown API"; }
     };
 
-    let gk_display_name = props.i18n.disp(&api.display_name);
+    let gk_display_name = props.i18n.disp(&def.display_name);
     use_effect_with_deps(
         {
             let title = format!("{gk_display_name} {}", props.name);
@@ -34,11 +34,10 @@ pub fn Comp(props: &Props) -> Html {
             + format!("{gk_display_name} {}", props.name);
         }
 
-        details::Comp(
+        loader::Comp(
             api = props.api.clone(),
             i18n = props.i18n.clone(),
-            discovery = props.discovery.clone(),
-            def = api.clone(),
+            def = def.clone(),
             group = props.group.clone(),
             kind = props.kind.clone(),
             name = props.name.clone(),

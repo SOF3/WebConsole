@@ -6,3 +6,5 @@ pub use text_button::*;
 
 pub mod select_button_group;
 pub use select_button_group::*;
+
+pub mod watch_loader;

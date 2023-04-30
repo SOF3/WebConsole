@@ -40,6 +40,15 @@ impl RcStr {
     pub fn to_istring(&self) -> AttrValue { AttrValue::Rc(self.0.clone()) }
 }
 
+impl From<AttrValue> for RcStr {
+    fn from(value: AttrValue) -> Self {
+        match value {
+            AttrValue::Static(s) => Self::new(s),
+            AttrValue::Rc(rc) => Self(rc),
+        }
+    }
+}
+
 impl From<String> for RcStr {
     fn from(value: String) -> Self { Self(Rc::from(value)) }
 }

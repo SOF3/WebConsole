@@ -126,11 +126,11 @@ fn fallback() -> Html {
 pub struct DisplayState {
     pub mode:   DisplayMode,
     pub hidden: HashSet<RcStr>,
-    pub dep:    Option<api::Desc>,
+    pub dep:    Option<api::ObjectDef>,
 }
 
 impl DisplayState {
-    fn of(def: &api::Desc) -> Self {
+    fn of(def: &api::ObjectDef) -> Self {
         let mut hidden = HashSet::new();
         for field in &def.fields {
             if field.metadata.hide_by_default {

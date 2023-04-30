@@ -164,7 +164,7 @@ impl Client {
         group: String,
         kind: String,
         name: String,
-    ) -> impl Future<Output = anyhow::Result<impl Stream<Item = anyhow::Result<WatchListEvent>>>>
+    ) -> impl Future<Output = anyhow::Result<impl Stream<Item = anyhow::Result<WatchSingleEvent>>>>
     {
         let this = self.clone();
         async move { this.watch_single_impl(&group, &kind, &name).await }
@@ -174,7 +174,7 @@ impl Client {
         group: &str,
         kind: &str,
         name: &str,
-    ) -> anyhow::Result<impl Stream<Item = anyhow::Result<WatchListEvent>>> {
+    ) -> anyhow::Result<impl Stream<Item = anyhow::Result<WatchSingleEvent>>> {
         let mut es = EventSource::new(&format!("{}/{group}/{kind}/{name}?watch=true", &self.host,))
             .context("instantiate EventSource to watch events")?;
         let sub = es.subscribe("message").context("subscribe to message events")?;
@@ -200,11 +200,11 @@ impl Client {
 #[derive(Deserialize, PartialEq)]
 pub struct Discovery {
     pub groups: IdMap<RcStr, Group>,
-    pub apis:   IdMap<GroupKind, Desc>,
+    pub apis:   IdMap<GroupKind, ObjectDef>,
 }
 
 #[derive(Deserialize, Clone, PartialEq)]
-pub struct Desc {
+pub struct ObjectDef {
     #[serde(flatten)]
     pub id:           GroupKind,
     pub display_name: i18n::Key,
@@ -212,7 +212,7 @@ pub struct Desc {
     pub metadata:     KnownObjectMetadata,
     pub fields:       IdMap<RcStr, FieldDef>,
 }
-impl HasId<GroupKind> for Desc {
+impl HasId<GroupKind> for ObjectDef {
     fn id(&self) -> GroupKind { self.id.clone() }
 }
 

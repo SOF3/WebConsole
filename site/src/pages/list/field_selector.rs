@@ -82,7 +82,7 @@ pub fn FieldSelector(props: &FieldSelectorProps) -> Html {
 #[derive(Clone, PartialEq, Properties)]
 pub struct FieldSelectorProps {
     pub i18n:                      I18n,
-    pub def:                       api::Desc,
+    pub def:                       api::ObjectDef,
     pub display:                   DisplayState,
     pub set_display_mode_callback: Callback<DisplayMode>,
     pub set_visible_callback:      Callback<(RcStr, bool)>,

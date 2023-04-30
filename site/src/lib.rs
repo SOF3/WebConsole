@@ -66,10 +66,18 @@ fn Main(props: &MainProps) -> HtmlResult {
         }
     };
 
+    let nav_node = use_node_ref();
+    let disp_nav_touch = use_state(|| false);
+
     Ok(defy! {
         section(class="main-content columns is-fullheight") {
             BrowserRouter {
-                aside(class = "column is-narrow is-fullheight section menu main-sidebar"){
+                aside(
+                    class = classes!(
+                        "column", "is-narrow", "is-fullheight", "section", "menu", "main-sidebar",
+                        (!*disp_nav_touch).then(|| "is-hidden-touch")),
+                    ref = nav_node.clone(),
+                ){
                     nav::Comp(
                         i18n = i18n.clone(),
                         api = api.clone(),
@@ -86,6 +94,10 @@ fn Main(props: &MainProps) -> HtmlResult {
                     }
                 }
             }
+        }
+
+        button(class = "is-overlay button is-hidden-desktop") {
+            span(class = "icon mdi mdi-menu", onclick = Callback::from(move |_| disp_nav_touch.set(!*disp_nav_touch)));
         }
     })
 }
