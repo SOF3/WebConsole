@@ -22,6 +22,7 @@ use SOFe\WebConsole\Lib\EventBasedObjectDesc;
 use SOFe\WebConsole\Lib\ImmutableFieldDesc;
 use SOFe\WebConsole\Lib\IntFieldType;
 use SOFe\WebConsole\Lib\ListFieldType;
+use SOFe\WebConsole\Lib\MainGroup;
 use SOFe\WebConsole\Lib\ObjectRefFieldType;
 use SOFe\WebConsole\Lib\PollingFieldDesc;
 use SOFe\WebConsole\Lib\StringFieldType;
@@ -31,9 +32,9 @@ use SOFe\WebConsole\Lib\StringFieldType;
  * @internal
  */
 final class Worlds {
-    const KIND = "world";
+    public const KIND = MainGroup::WORLD_KIND;
 
-    public static function register(Main $plugin, Registry $registry) : void {
+    public static function registerKind(Main $plugin, Registry $registry) : void {
         $registry->registerObject(new ObjectDef(
             group: Group::ID,
             kind: self::KIND,
@@ -51,7 +52,9 @@ final class Worlds {
             ),
             metadata: [],
         ));
+    }
 
+    public static function registerFields(Main $plugin, Registry $registry) : void {
         $registry->registerField(new FieldDef(
             objectGroup: Group::ID,
             objectKind: self::KIND,

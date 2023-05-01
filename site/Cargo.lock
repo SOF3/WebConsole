@@ -740,6 +740,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasm-logger",
  "web-sys",
+ "xias",
  "yew",
  "yew-router",
 ]
@@ -1046,6 +1047,12 @@ name = "windows_x86_64_msvc"
 version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "447660ad36a13288b1db4d4248e857b510e8c3a225c822ba4fb748c0aafecffd"
+
+[[package]]
+name = "xias"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87a9d9a23a25d459aee340f76fd8aedad24b5ec05e316cdd3c7d0f221f2d554e"
 
 [[package]]
 name = "yew"

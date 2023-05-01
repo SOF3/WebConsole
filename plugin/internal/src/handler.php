@@ -156,7 +156,7 @@ final class Handler {
                         $channel->sendWithoutWait([
                             "event" => "Update",
                             "field" => $field->path,
-                            "value" => $value,
+                            "value" => $field->type->serializeValue($value),
                         ]);
                     }
                 });
@@ -508,7 +508,7 @@ final class WatchHandler {
                     "event" => "FieldUpdate",
                     "name" => $this->objectDef->desc->name($identity),
                     "field" => $field->path,
-                    "value" => $newValue,
+                    "value" => $field->type->serializeValue($newValue),
                 ]);
             }
         } finally {

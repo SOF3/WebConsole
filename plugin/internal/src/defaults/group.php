@@ -7,9 +7,10 @@ namespace SOFe\WebConsole\Defaults;
 use SOFe\WebConsole\Api\GroupDef;
 use SOFe\WebConsole\Api\Registry;
 use SOFe\WebConsole\Internal\Main;
+use SOFe\WebConsole\Lib\MainGroup;
 
 final class Group {
-    public const ID = "main";
+    public const ID = MainGroup::GROUP_ID;
 
     public static function register(Main $plugin, Registry $registry) : void {
         $registry->registerGroup(new GroupDef(
@@ -18,8 +19,12 @@ final class Group {
             displayPriority: 0,
         ));
 
-        Logging::register($plugin, $registry);
-        Players::register($plugin, $registry);
-        Worlds::register($plugin, $registry);
+        Logging::registerKind($plugin, $registry);
+        Players::registerKind($plugin, $registry);
+        Worlds::registerKind($plugin, $registry);
+
+        Logging::registerFields($registry);
+        Players::registerFields($plugin, $registry);
+        Worlds::registerFields($plugin, $registry);
     }
 }

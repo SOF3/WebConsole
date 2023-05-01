@@ -37,6 +37,7 @@ final class EventBasedFieldDesc implements FieldDesc {
     }
 
     public function watch($object) : Traverser {
+        // FIXME performance: this implementation is O(n^2), handling each move event for each other player.
         return Traverser::fromClosure(function() use ($object) {
             $previous = yield from ($this->getter)($object);
             yield $previous => Traverser::VALUE;

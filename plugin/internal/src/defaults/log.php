@@ -29,7 +29,7 @@ use function substr;
 final class Logging {
     const KIND = "log-message";
 
-    public static function register(Main $plugin, Registry $registry) : void {
+    public static function registerKind(Main $plugin, Registry $registry) : void {
         $desc = new StreamingObjectDesc(1024);
         self::attachLogger($plugin, $desc);
         $registry->registerObject(new ObjectDef(
@@ -43,7 +43,9 @@ final class Logging {
                 Metadata\DefaultDisplayMode::table(),
             ],
         ));
+    }
 
+    public static function registerFields(Registry $registry) : void {
         $registry->registerField(new FieldDef(
             objectGroup: Group::ID,
             objectKind: self::KIND,
