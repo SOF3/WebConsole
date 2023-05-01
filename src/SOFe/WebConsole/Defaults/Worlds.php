@@ -12,28 +12,29 @@ use pocketmine\event\world\WorldUnloadEvent;
 use pocketmine\player\Player;
 use pocketmine\world\World;
 use RuntimeException;
-use libs\_37f8d49eb6299cb1\SOFe\AwaitGenerator\GeneratorUtil;
+use libs\_ee7e37d9654501e7\SOFe\AwaitGenerator\GeneratorUtil;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
 use SOFe\WebConsole\Internal\Main;
-use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\EventBasedFieldDesc;
-use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\EventBasedObjectDesc;
-use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\ImmutableFieldDesc;
-use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\IntFieldType;
-use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\ListFieldType;
-use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\ObjectRefFieldType;
-use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\PollingFieldDesc;
-use libs\_37f8d49eb6299cb1\SOFe\WebConsole\Lib\StringFieldType;
+use libs\_ee7e37d9654501e7\SOFe\WebConsole\Lib\EventBasedFieldDesc;
+use libs\_ee7e37d9654501e7\SOFe\WebConsole\Lib\EventBasedObjectDesc;
+use libs\_ee7e37d9654501e7\SOFe\WebConsole\Lib\ImmutableFieldDesc;
+use libs\_ee7e37d9654501e7\SOFe\WebConsole\Lib\IntFieldType;
+use libs\_ee7e37d9654501e7\SOFe\WebConsole\Lib\ListFieldType;
+use libs\_ee7e37d9654501e7\SOFe\WebConsole\Lib\MainGroup;
+use libs\_ee7e37d9654501e7\SOFe\WebConsole\Lib\ObjectRefFieldType;
+use libs\_ee7e37d9654501e7\SOFe\WebConsole\Lib\PollingFieldDesc;
+use libs\_ee7e37d9654501e7\SOFe\WebConsole\Lib\StringFieldType;
 
 
 /**
  * @internal
  */
 final class Worlds {
-    const KIND = "world";
+    public const KIND = MainGroup::WORLD_KIND;
 
-    public static function register(Main $plugin, Registry $registry) : void {
+    public static function registerKind(Main $plugin, Registry $registry) : void {
         $registry->registerObject(new ObjectDef(
             group: Group::ID,
             kind: self::KIND,
@@ -51,7 +52,9 @@ final class Worlds {
             ),
             metadata: [],
         ));
+    }
 
+    public static function registerFields(Main $plugin, Registry $registry) : void {
         $registry->registerField(new FieldDef(
             objectGroup: Group::ID,
             objectKind: self::KIND,

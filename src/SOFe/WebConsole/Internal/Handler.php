@@ -7,11 +7,11 @@ namespace SOFe\WebConsole\Internal;
 use Closure;
 use Generator;
 use RuntimeException;
-use libs\_37f8d49eb6299cb1\SOFe\AwaitGenerator\Await;
-use libs\_37f8d49eb6299cb1\SOFe\AwaitGenerator\Channel;
-use libs\_37f8d49eb6299cb1\SOFe\AwaitGenerator\Loading;
-use libs\_37f8d49eb6299cb1\SOFe\AwaitGenerator\PubSub;
-use libs\_37f8d49eb6299cb1\SOFe\AwaitGenerator\Traverser;
+use libs\_ee7e37d9654501e7\SOFe\AwaitGenerator\Await;
+use libs\_ee7e37d9654501e7\SOFe\AwaitGenerator\Channel;
+use libs\_ee7e37d9654501e7\SOFe\AwaitGenerator\Loading;
+use libs\_ee7e37d9654501e7\SOFe\AwaitGenerator\PubSub;
+use libs\_ee7e37d9654501e7\SOFe\AwaitGenerator\Traverser;
 use SOFe\WebConsole\Api\FieldDef;
 use SOFe\WebConsole\Api\ObjectDef;
 use SOFe\WebConsole\Api\Registry;
@@ -156,7 +156,7 @@ final class Handler {
                         $channel->sendWithoutWait([
                             "event" => "Update",
                             "field" => $field->path,
-                            "value" => $value,
+                            "value" => $field->type->serializeValue($value),
                         ]);
                     }
                 });

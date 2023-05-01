@@ -14,3 +14,4 @@ main-log-message-message-clean = message
 main-types-x = x
 main-types-y = y
 main-types-z = z
+main-types-world = world
