@@ -1,3 +1,14 @@
+ARCHIVED
+===
+
+> [!IMPORTANT]
+> This project has been discontinued due to lack of maintainers.
+> The repo remains public as a proof of concept for a web-compatible declarative API to control PM servers.
+> If you are interested in continuing this project, please contact @sofe.sof3 on Discord.
+>
+> In the long term, I envision that PocketMine-MP implements this plugin as a first-class core feature and API,
+> and demote the stdin-based console UI as a second-class feature (e.g. through a builtin plugin).
+
 # WebConsole
 
 > API server and modernized control panel for PocketMine servers.
